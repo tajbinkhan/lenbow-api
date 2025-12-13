@@ -7,7 +7,7 @@ export const users = pgTable('users', {
 	password: text('password'),
 	emailVerified: boolean('email_verified').default(false).notNull(),
 	image: text('image'),
-	is2faEnabled: boolean('is_2fa_enabled').default(false),
+	is2faEnabled: boolean('is_2fa_enabled').default(false).notNull(),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
 	updatedAt: timestamp('updated_at')
 		.defaultNow()
@@ -22,7 +22,7 @@ export const sessions = pgTable('sessions', {
 	userAgent: text('user_agent').default('Unknown'),
 	deviceName: varchar('device_name', { length: 255 }).default('Unknown Device'),
 	deviceType: varchar('device_type', { length: 50 }).default('Unknown'),
-	twoFactorVerified: boolean('two_factor_verified').default(false),
+	twoFactorVerified: boolean('two_factor_verified').default(false).notNull(),
 	userId: integer('user_id')
 		.notNull()
 		.references(() => users.id, { onDelete: 'cascade' }),
