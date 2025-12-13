@@ -1,98 +1,191 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Loan App API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
-
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+A secure and scalable loan application backend API built with NestJS, PostgreSQL, and Drizzle ORM.
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+This is the backend API for a loan application system, featuring secure authentication, CSRF
+protection, and comprehensive user management. Built with modern technologies and best practices for
+production-ready applications.
 
-## Project setup
+## Features
 
-```bash
-$ pnpm install
-```
+- 🔐 **Secure Authentication** - JWT-based authentication with session management
+- 🛡️ **CSRF Protection** - Built-in CSRF token validation
+- 🔑 **OAuth Integration** - Google OAuth 2.0 authentication support
+- 📊 **Database ORM** - Drizzle ORM for type-safe database queries
+- 🐘 **PostgreSQL** - Robust relational database with Docker support
+- 🔒 **Password Encryption** - Bcrypt password hashing
+- 🌐 **API Response Standardization** - Consistent response format across all endpoints
+- 📝 **Request Logging** - Comprehensive request/response logging
+- 🎯 **Device Tracking** - User agent and device information tracking
 
-## Compile and run the project
+## Tech Stack
 
-```bash
-# development
-$ pnpm run start
+- **Framework:** NestJS
+- **Language:** TypeScript
+- **Database:** PostgreSQL
+- **ORM:** Drizzle ORM
+- **Authentication:** Passport.js (JWT & Google OAuth)
+- **Security:** CSRF-CSRF, bcryptjs
+- **Package Manager:** pnpm
 
-# watch mode
-$ pnpm run start:dev
+## Prerequisites
 
-# production mode
-$ pnpm run start:prod
-```
+- Node.js (v18 or higher)
+- pnpm
+- Docker (for PostgreSQL)
 
-## Run tests
+## Project Setup
 
-```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+1. **Install dependencies:**
 
 ```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+pnpm install
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+2. **Configure environment variables:** Create a `.env` file in the root directory with the
+   following variables:
 
-## Resources
+```env
+# Application
+NODE_ENV=development
+PORT=8080
 
-Check out a few resources that may come in handy when working with NestJS:
+# Database
+DATABASE_URL="postgresql://auth_project:auth_project@localhost:5666/auth_project?schema=public"
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+# JWT
+JWT_SECRET=your_jwt_secret_here
+JWT_EXPIRES_IN=7d
 
-## Support
+# Google OAuth (optional)
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_CALLBACK_URL=http://localhost:8080/auth/google/callback
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+# Postgres Docker Configuration
+POSTGRES_USER=auth_project
+POSTGRES_PASSWORD=auth_project
+POSTGRES_DB=auth_project
+```
 
-## Stay in touch
+3. **Start PostgreSQL with Docker:**
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```bash
+docker-compose up -d
+```
+
+4. **Generate and run database migrations:**
+
+```bash
+# Generate migration files
+pnpm db:generate
+
+# Push schema changes to database
+pnpm db:push
+```
+
+## Running the Application
+
+```bash
+# Development mode with watch
+pnpm dev
+
+# Standard development mode
+pnpm start
+
+# Production mode
+pnpm prod
+```
+
+The API will be available at `http://localhost:8080` (or your configured PORT).
+
+## Database Management
+
+```bash
+# Open Drizzle Studio (database GUI)
+pnpm db:studio
+
+# Generate new migrations
+pnpm db:generate
+
+# Run migrations
+pnpm db:migrate
+
+# Push schema changes directly
+pnpm db:push
+
+# Clear database
+pnpm db:clear
+```
+
+## Code Quality
+
+```bash
+# Format code
+pnpm format
+
+# Lint code
+pnpm lint
+
+# Build for production
+pnpm build
+```
+
+## Project Structure
+
+```
+src/
+├── app/
+│   └── auth/                 # Authentication module
+│       ├── strategies/       # Passport strategies (JWT, Google)
+│       ├── auth.service.ts   # Authentication logic
+│       ├── auth.controller.ts
+│       └── auth.guard.ts
+├── core/                     # Core utilities
+│   ├── crypto/              # Encryption services
+│   ├── validators/          # Schema validators
+│   └── constants.ts
+├── csrf/                    # CSRF protection module
+├── database/                # Database configuration
+│   ├── schema.ts           # Database schema
+│   └── connection.ts
+└── models/
+    └── drizzle/            # Drizzle ORM models
+```
+
+## API Endpoints
+
+### Authentication
+
+- `POST /auth/register` - Register new user
+- `POST /auth/login` - Login with credentials
+- `GET /auth/google` - Initiate Google OAuth
+- `GET /auth/google/callback` - Google OAuth callback
+- `POST /auth/logout` - Logout user
+- `GET /auth/profile` - Get user profile
+
+### CSRF
+
+- `GET /csrf` - Get CSRF token
+
+## Security Features
+
+- JWT token-based authentication
+- HTTP-only cookies for token storage
+- CSRF token validation on state-changing requests
+- Password hashing with bcrypt
+- Session management with device tracking
+- IP address and user agent logging
+
+## Documentation
+
+For additional documentation, see:
+
+- [CSRF Implementation](docs/CSRF_IMPLEMENTATION.md)
+- [Testing Removal Guide](docs/REMOVE_TESTING.md)
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+UNLICENSED - Private project
