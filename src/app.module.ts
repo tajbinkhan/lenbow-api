@@ -6,6 +6,7 @@ import { AuthModule } from './app/auth/auth.module';
 import { CryptoModule } from './core/crypto/crypto.module';
 import { validateEnv } from './core/env';
 import { CsrfModule } from './csrf/csrf.module';
+import { TransactionsModule } from './app/transactions/transactions.module';
 
 @Module({
 	imports: [
@@ -18,6 +19,7 @@ import { CsrfModule } from './csrf/csrf.module';
 		CsrfModule,
 		DatabaseModule,
 		AuthModule,
+		TransactionsModule,
 	],
 	controllers: [],
 })

@@ -11,7 +11,11 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Request as ExpressRequest, Response } from 'express';
-import type { CreateUser, UserWithoutPassword } from 'src/app/auth/@types/auth.types';
+import type {
+	CreateUser,
+	UserWithoutPassword,
+	UserWithoutPasswordResponse,
+} from 'src/app/auth/@types/auth.types';
 import { GoogleAuthGuard, JwtAuthGuard } from 'src/app/auth/auth.guard';
 import {
 	type LoginDto,
@@ -39,7 +43,7 @@ export class AuthController {
 	async login(
 		@Body() loginDto: LoginDto,
 		@Request() request: ExpressRequest,
-	): Promise<ApiResponse<UserWithoutPassword>> {
+	): Promise<ApiResponse<UserWithoutPasswordResponse>> {
 		const validate = loginSchema.safeParse(loginDto);
 		if (!validate.success) {
 			throw new BadRequestException(validate.error.issues.map(issue => issue.message).join(', '));
@@ -66,11 +70,18 @@ export class AuthController {
 			maxAge: sessionTimeout,
 		});
 
-		return createApiResponse(HttpStatus.OK, 'Login successful', user);
+		const responseUser: UserWithoutPasswordResponse = {
+			...user,
+			id: user.publicId,
+		};
+
+		return createApiResponse(HttpStatus.OK, 'Login successful', responseUser);
 	}
 
 	@Post('register')
-	async register(@Body() registerDto: RegisterDto): Promise<ApiResponse<UserWithoutPassword>> {
+	async register(
+		@Body() registerDto: RegisterDto,
+	): Promise<ApiResponse<UserWithoutPasswordResponse>> {
 		const validate = registerSchema.safeParse(registerDto);
 		if (!validate.success) {
 			throw new BadRequestException(validate.error.issues.map(issue => issue.message).join(', '));
@@ -90,7 +101,12 @@ export class AuthController {
 
 		const user = await this.authService.createUser(userData);
 
-		return createApiResponse(HttpStatus.CREATED, 'User registered successfully', user);
+		const responseUser: UserWithoutPasswordResponse = {
+			...user,
+			id: user.publicId,
+		};
+
+		return createApiResponse(HttpStatus.CREATED, 'User registered successfully', responseUser);
 	}
 
 	@UseGuards(JwtAuthGuard)
@@ -113,9 +129,13 @@ export class AuthController {
 
 	@UseGuards(JwtAuthGuard)
 	@Get('me')
-	getProfile(@Request() req: ExpressRequest): ApiResponse<UserWithoutPassword> {
+	getProfile(@Request() req: ExpressRequest): ApiResponse<UserWithoutPasswordResponse> {
 		const user = req.user as UserWithoutPassword;
-		return createApiResponse(HttpStatus.OK, 'User profile fetched successfully', user);
+		const responseUser: UserWithoutPasswordResponse = {
+			...user,
+			id: user.publicId,
+		};
+		return createApiResponse(HttpStatus.OK, 'User profile fetched successfully', responseUser);
 	}
 
 	/**
@@ -188,11 +208,16 @@ export class AuthController {
 			}
 		}
 
+		const responseUser: UserWithoutPasswordResponse = {
+			...user,
+			id: user.publicId,
+		};
+
 		// Redirect to custom URL or return JSON response
 		if (redirectUrl) {
 			response.redirect(redirectUrl);
 		} else {
-			response.json(createApiResponse(HttpStatus.OK, 'Google login successful', user));
+			response.json(createApiResponse(HttpStatus.OK, 'Google login successful', responseUser));
 		}
 	}
 }
