@@ -53,6 +53,9 @@ importers:
       drizzle-orm:
         specifier: ^0.45.1
         version: 0.45.1(@types/pg@8.16.0)(pg@8.16.3)
+      libphonenumber-js:
+        specifier: ^1.12.33
+        version: 1.12.33
       passport:
         specifier: ^0.7.0
         version: 0.7.0
@@ -1908,6 +1911,9 @@ packages:
   levn@0.4.1:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
     engines: {node: '>= 0.8.0'}
+
+  libphonenumber-js@1.12.33:
+    resolution: {integrity: sha512-r9kw4OA6oDO4dPXkOrXTkArQAafIKAU71hChInV4FxZ69dxCfbwQGDPzqR5/vea94wU705/3AZroEbSoeVWrQw==}
 
   lines-and-columns@1.2.4:
     resolution: {integrity: sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==}
@@ -4349,6 +4355,8 @@ snapshots:
     dependencies:
       prelude-ls: 1.2.1
       type-check: 0.4.0
+
+  libphonenumber-js@1.12.33: {}
 
   lines-and-columns@1.2.4: {}
 

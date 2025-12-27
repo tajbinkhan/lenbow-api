@@ -22,15 +22,16 @@ export const users = pgTable(
 		password: text('password'),
 		emailVerified: boolean('email_verified').default(false).notNull(),
 		image: text('image'),
+		phone: varchar('phone', { length: 20 }),
 		is2faEnabled: boolean('is_2fa_enabled').default(false).notNull(),
 		...timestamps,
 	},
-	table => ({
-		publicIdIdx: uniqueIndex('users_public_id_idx').on(table.publicId),
-		emailIdx: uniqueIndex('users_email_idx').on(table.email),
-		emailVerifiedIdx: index('users_email_verified_idx').on(table.emailVerified),
-		is2faEnabledIdx: index('users_is_2fa_enabled_idx').on(table.is2faEnabled),
-	}),
+	table => [
+		uniqueIndex('users_public_id_idx').on(table.publicId),
+		uniqueIndex('users_email_idx').on(table.email),
+		index('users_email_verified_idx').on(table.emailVerified),
+		index('users_is_2fa_enabled_idx').on(table.is2faEnabled),
+	],
 );
 
 export const sessions = pgTable(
@@ -51,15 +52,15 @@ export const sessions = pgTable(
 		isRevoked: boolean('is_revoked').default(false).notNull(),
 		...timestamps,
 	},
-	table => ({
-		publicIdIdx: uniqueIndex('sessions_public_id_idx').on(table.publicId),
-		tokenIdx: uniqueIndex('sessions_token_idx').on(table.token),
-		userIdIdx: index('sessions_user_id_idx').on(table.userId),
-		expiresAtIdx: index('sessions_expires_at_idx').on(table.expiresAt),
-		isRevokedIdx: index('sessions_is_revoked_idx').on(table.isRevoked),
-		userIdIsRevokedIdx: index('sessions_user_id_is_revoked_idx').on(table.userId, table.isRevoked),
-		userIdExpiresAtIdx: index('sessions_user_id_expires_at_idx').on(table.userId, table.expiresAt),
-	}),
+	table => [
+		uniqueIndex('sessions_public_id_idx').on(table.publicId),
+		uniqueIndex('sessions_token_idx').on(table.token),
+		index('sessions_user_id_idx').on(table.userId),
+		index('sessions_expires_at_idx').on(table.expiresAt),
+		index('sessions_is_revoked_idx').on(table.isRevoked),
+		index('sessions_user_id_is_revoked_idx').on(table.userId, table.isRevoked),
+		index('sessions_user_id_expires_at_idx').on(table.userId, table.expiresAt),
+	],
 );
 
 export const accounts = pgTable(
@@ -81,18 +82,13 @@ export const accounts = pgTable(
 		password: text('password'),
 		...timestamps,
 	},
-	table => ({
-		publicIdIdx: uniqueIndex('accounts_public_id_idx').on(table.publicId),
-		userIdIdx: index('accounts_user_id_idx').on(table.userId),
-		accountIdProviderIdIdx: uniqueIndex('accounts_account_id_provider_id_idx').on(
-			table.accountId,
-			table.providerId,
-		),
-		providerIdIdx: index('accounts_provider_id_idx').on(table.providerId),
-		accessTokenExpiresAtIdx: index('accounts_access_token_expires_at_idx').on(
-			table.accessTokenExpiresAt,
-		),
-	}),
+	table => [
+		uniqueIndex('accounts_public_id_idx').on(table.publicId),
+		uniqueIndex('accounts_account_id_provider_id_idx').on(table.accountId, table.providerId),
+		index('accounts_user_id_idx').on(table.userId),
+		index('accounts_provider_id_idx').on(table.providerId),
+		index('accounts_access_token_expires_at_idx').on(table.accessTokenExpiresAt),
+	],
 );
 
 export const verifications = pgTable(
@@ -105,14 +101,11 @@ export const verifications = pgTable(
 		expiresAt: timestamp('expires_at').notNull(),
 		...timestamps,
 	},
-	table => ({
-		publicIdIdx: uniqueIndex('verifications_public_id_idx').on(table.publicId),
-		identifierIdx: index('verifications_identifier_idx').on(table.identifier),
-		valueIdx: index('verifications_value_idx').on(table.value),
-		expiresAtIdx: index('verifications_expires_at_idx').on(table.expiresAt),
-		identifierValueIdx: index('verifications_identifier_value_idx').on(
-			table.identifier,
-			table.value,
-		),
-	}),
+	table => [
+		uniqueIndex('verifications_public_id_idx').on(table.publicId),
+		index('verifications_identifier_idx').on(table.identifier),
+		index('verifications_value_idx').on(table.value),
+		index('verifications_expires_at_idx').on(table.expiresAt),
+		index('verifications_identifier_value_idx').on(table.identifier, table.value),
+	],
 );

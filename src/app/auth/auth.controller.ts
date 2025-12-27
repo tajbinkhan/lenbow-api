@@ -95,6 +95,7 @@ export class AuthController {
 			password: validate.data.password,
 			image: validate.data.image || null,
 			emailVerified: false,
+			phone: validate.data.phone || null,
 		};
 
 		const existingUser = await this.authService.checkIfUserExists(userData.email);

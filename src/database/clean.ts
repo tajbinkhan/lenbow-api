@@ -81,7 +81,8 @@ class DatabaseCleaner {
 			// await this.clearMongoDatabase();
 			await this.clearPostgresDatabase();
 
-			const commands = ['db:generate', 'db:migrate'];
+			// const commands = ['db:generate', 'db:migrate'];
+			const commands = ['db:push'];
 			commands.forEach(cmd => execSync(`npm run ${cmd}`, { stdio: 'inherit' }));
 
 			console.log('Database reset completed successfully');

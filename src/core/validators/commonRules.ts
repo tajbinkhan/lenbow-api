@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { parsePhoneNumberFromString } from 'libphonenumber-js';
+
 import { zodMessages } from '../messages';
 
 // =======================
@@ -141,6 +143,14 @@ const baseUrl = (
 
 	return schema;
 };
+
+const baseUUID = (name: string) =>
+	z.uuid({
+		version: 'v4',
+		error: zodMessages.error.invalid.invalidString
+			? zodMessages.error.invalid.invalidString(name)
+			: `${name} must be a valid UUID`,
+	});
 
 // =======================
 // 🔹 Utility Validators (Union & Array)
@@ -288,13 +298,42 @@ export const validateEmail = baseEmail('Email', { max: 255 });
 
 export const validateUrl = (name: string) => baseUrl(name, { max: 2048 });
 
-export const phoneWithCountryCodeRegex = /^\+?[1-9]\d{1,14}$/;
-export const validatePhoneNumber = (name: string) =>
+export const validateUUID = (name: string) => baseUUID(name);
+
+// export const phoneWithCountryCodeRegex = /^\+?[1-9]\d{1,14}$/;
+// export const validatePhoneNumber = (name: string) =>
+// 	baseString(name, { min: 1 })
+// 		.refine(value => phoneWithCountryCodeRegex.test(value), {
+// 			error: zodMessages.error.invalid.invalidPhoneNumber(name),
+// 		})
+// 		.transform(value => value.trim());
+
+export const validatePhoneNumber = (name = 'Phone') =>
 	baseString(name, { min: 1 })
-		.refine(value => phoneWithCountryCodeRegex.test(value), {
-			error: zodMessages.error.invalid.invalidPhoneNumber(name),
-		})
-		.transform(value => value.trim());
+		.trim()
+		.superRefine((val, ctx) => {
+			// allow empty if you want optional phone; otherwise remove this
+			if (!val) return;
+
+			// Best practice: require international format by default
+			// Example: +8801712345678, +14155552671
+			const phone = parsePhoneNumberFromString(val);
+
+			if (!phone || !phone.isValid()) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: `${name} is not a valid phone number`,
+				});
+				return;
+			}
+
+			// Enforce E.164 output (canonical)
+			// If you want to require the user input itself to start with '+', uncomment:
+			// if (!val.startsWith("+")) { ...issue... }
+
+			// Optionally normalize elsewhere:
+			// const e164 = phone.number; // "+14155552671"
+		});
 
 export const validateUsernameOrEmail = baseString('Username or email', { min: 1, max: 255 }).refine(
 	value => {

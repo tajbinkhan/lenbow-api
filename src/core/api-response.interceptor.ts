@@ -30,17 +30,25 @@ export interface ApiResponse<T> {
 	data?: T;
 	timestamp: string;
 	path: string;
+	pagination?: Pagination | CursorPagination;
+}
+
+export interface PaginatedResponse<T> {
+	data: T[];
+	pagination?: Pagination | CursorPagination;
 }
 
 export function createApiResponse<T>(
 	statusCode: number,
 	message: string,
 	data?: T,
+	pagination?: Pagination | CursorPagination,
 ): ApiResponse<T> {
 	return {
 		statusCode,
 		message,
 		data,
+		pagination,
 		timestamp: new Date().toISOString(),
 		path: '', // Will be set by interceptor
 	};
@@ -68,6 +76,7 @@ export class ApiResponseInterceptor<T> implements NestInterceptor<T, ApiResponse
 						statusCode: response.statusCode!,
 						message: response.message!,
 						data: response.data,
+						pagination: response.pagination,
 						timestamp: response.timestamp!,
 						path: request.url,
 					};

@@ -43,6 +43,7 @@
 		"dotenv": "^17.2.3",
 		"drizzle-kit": "^0.31.8",
 		"drizzle-orm": "^0.45.1",
+		"libphonenumber-js": "^1.12.33",
 		"passport": "^0.7.0",
 		"passport-google-oauth20": "^2.0.0",
 		"passport-jwt": "^4.0.1",

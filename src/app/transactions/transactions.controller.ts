@@ -2,16 +2,28 @@ import {
 	BadRequestException,
 	Body,
 	Controller,
+	Delete,
 	Get,
 	HttpStatus,
 	Param,
 	ParseUUIDPipe,
+	Post,
+	Put,
+	Query,
+	Req,
 	UseGuards,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { JwtAuthGuard } from 'src/app/auth/auth.guard';
-import type { TransactionReturnType } from 'src/app/transactions/@types/transactions.types';
+import type {
+	TransactionListReturnType,
+	TransactionReturnType,
+} from 'src/app/transactions/@types/transactions.types';
 import {
+	transactionQuerySchema,
 	validateTransactionSchema,
+	type TransactionQuerySchemaType,
+	type ValidateDeleteTransactionDto,
 	type ValidateTransactionDto,
 	type ValidateUpdateTransactionDto,
 } from 'src/app/transactions/transactions.schema';
@@ -23,12 +35,53 @@ export class TransactionsController {
 	constructor(private readonly transactionsService: TransactionsService) {}
 
 	@UseGuards(JwtAuthGuard)
-	@Get('create')
+	@Get('')
+	async getTransactionList(
+		@Req() req: Request,
+		@Query() query: TransactionQuerySchemaType,
+	): Promise<ApiResponse<TransactionListReturnType[]>> {
+		const userId = req.user?.id;
+
+		const validate = transactionQuerySchema.safeParse(query);
+		if (!validate.success) {
+			throw new BadRequestException(
+				`Validation failed: ${validate.error.issues.map(issue => issue.message).join(', ')}`,
+			);
+		}
+
+		const transactions = await this.transactionsService.getTransactionList(validate.data, userId!);
+
+		return createApiResponse(
+			HttpStatus.OK,
+			'Transaction list fetched successfully',
+			transactions.data,
+			transactions.pagination,
+		);
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@Post('')
 	async createTransaction(
 		@Body() validateTransactionDto: ValidateTransactionDto,
+		@Req() req: Request,
 	): Promise<ApiResponse<TransactionReturnType>> {
+		const borrowerId = Number(req.user?.id);
+		const requesterId = String(validateTransactionDto.requesterId);
+
+		const getContact = await this.transactionsService.getOrCreateContactByPublicId(
+			requesterId,
+			borrowerId,
+		);
+
+		const extendedDto: ValidateTransactionDto = {
+			...validateTransactionDto,
+			borrowerId: getContact.borrowerId,
+			requesterId: getContact.requesterId,
+			status: 'pending',
+		};
+
 		// Validate the incoming data
-		const validate = validateTransactionSchema.safeParse(validateTransactionDto);
+		const validate = validateTransactionSchema.safeParse(extendedDto);
 		if (!validate.success) {
 			throw new BadRequestException(
 				`Validation failed: ${validate.error.issues.map(issue => issue.message).join(', ')}`,
@@ -51,7 +104,58 @@ export class TransactionsController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Get(':publicId/status')
+	@Delete('')
+	async deleteTransaction(
+		@Body() body: ValidateDeleteTransactionDto,
+	): Promise<ApiResponse<string | null>> {
+		// Fetch the transaction by its public ID
+		const transactions = await this.transactionsService.getTransactionsByPublicIds(
+			body.transactionIds,
+		);
+
+		const { ineligibleTransactions, eligibleTransactions } =
+			this.transactionsService.checkEligibilityForDeleting(transactions);
+
+		const ineligibleTransactionsNumber = ineligibleTransactions.length;
+
+		await this.transactionsService.deleteTransaction(eligibleTransactions.map(t => t));
+
+		return createApiResponse(
+			HttpStatus.OK,
+			'Transaction deleted successfully',
+			ineligibleTransactionsNumber > 0
+				? `${ineligibleTransactionsNumber} transactions were not deleted as they are not eligible for deletion.`
+				: null,
+		);
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@Get('/requested')
+	async getRequestedTransactionList(
+		@Req() req: Request,
+		@Query() query: TransactionQuerySchemaType,
+	): Promise<ApiResponse<TransactionListReturnType[]>> {
+		const userId = req.user?.id;
+
+		const validate = transactionQuerySchema.safeParse(query);
+		if (!validate.success) {
+			throw new BadRequestException(
+				`Validation failed: ${validate.error.issues.map(issue => issue.message).join(', ')}`,
+			);
+		}
+
+		const transactions = await this.transactionsService.getTransactionList(validate.data, userId!);
+
+		return createApiResponse(
+			HttpStatus.OK,
+			'Transaction list fetched successfully',
+			transactions.data,
+			transactions.pagination,
+		);
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@Put(':publicId/status')
 	async updateTransactionStatus(
 		@Param('publicId', ParseUUIDPipe) publicId: string,
 		@Body() statusDto: ValidateUpdateTransactionDto['status'],

@@ -70,6 +70,18 @@ export class AuthService extends DrizzleService {
 		return userWithoutPassword;
 	}
 
+	async findUserByPublicId(publicId: string): Promise<UserWithoutPassword> {
+		const user = await this.getDb().query.users.findFirst({
+			where: eq(schema.users.publicId, publicId),
+		});
+
+		if (!user) throw new UnauthorizedException('User not found');
+
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const { password, ...userWithoutPassword } = user;
+		return userWithoutPassword;
+	}
+
 	async findUserByEmail(email: string): Promise<UserWithoutPassword> {
 		const user = await this.getDb().query.users.findFirst({
 			where: eq(schema.users.email, email),
@@ -189,6 +201,7 @@ export class AuthService extends DrizzleService {
 			password: null,
 			image: profile.picture,
 			emailVerified: true, // Google verified email
+			phone: null,
 		});
 
 		// Create the account link

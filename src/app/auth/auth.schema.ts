@@ -1,4 +1,9 @@
-import { validateEmail, validatePassword, validateString } from 'src/core/validators/commonRules';
+import {
+	validateEmail,
+	validatePassword,
+	validatePhoneNumber,
+	validateString,
+} from 'src/core/validators/commonRules';
 import z from 'zod';
 
 export const loginSchema = z.object({
@@ -11,6 +16,7 @@ export const registerSchema = z.object({
 	email: validateEmail,
 	password: validatePassword,
 	image: validateString('Image').optional(),
+	phone: validatePhoneNumber('Phone').optional(),
 });
 
 export type LoginDto = z.infer<typeof loginSchema>;
