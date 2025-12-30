@@ -11,24 +11,27 @@ import {
 } from 'drizzle-orm/pg-core';
 import { timestamps } from 'src/database/helpers';
 import { users } from 'src/models/drizzle/auth.model';
-import { transactionStatusEnum, transactionTypeEnum } from 'src/models/drizzle/enum.models';
+import { transactionStatusEnum } from 'src/models/drizzle/enum.models';
 
 // Contacts table
 export const contacts = pgTable(
 	'contacts',
 	{
 		id: serial('id').primaryKey(),
-		borrowerId: integer('borrower_id')
+		requestedUserId: integer('requested_user_id')
 			.notNull()
 			.references(() => users.id, { onDelete: 'cascade' }),
-		requesterId: integer('requester_id')
+		connectedUserId: integer('connected_user_id')
 			.notNull()
 			.references(() => users.id, { onDelete: 'cascade' }),
 		...timestamps,
 	},
 	table => [
-		uniqueIndex('contacts_borrower_requester_idx').on(table.borrowerId, table.requesterId),
-		index('contacts_borrower_id_idx').on(table.borrowerId),
+		uniqueIndex('contacts_requested_connected_idx').on(
+			table.requestedUserId,
+			table.connectedUserId,
+		),
+		index('contacts_requested_user_id_idx').on(table.requestedUserId),
 	],
 );
 
@@ -41,29 +44,39 @@ export const transactions = pgTable(
 		borrowerId: integer('borrower_id')
 			.notNull()
 			.references(() => users.id, { onDelete: 'cascade' }),
-		requesterId: integer('requester_id')
+		lenderId: integer('lender_id')
 			.notNull()
 			.references(() => users.id, { onDelete: 'cascade' }),
-		type: transactionTypeEnum('type').notNull(),
 		amount: decimal('amount', { precision: 10, scale: 2, mode: 'number' }).notNull(),
 		amountPaid: decimal('amount_paid', { precision: 10, scale: 2, mode: 'number' })
 			.default(0)
 			.notNull(),
+		remainingAmount: decimal('remaining_amount', {
+			precision: 10,
+			scale: 2,
+			mode: 'number',
+		})
+			.notNull()
+			.default(0), // amount - amountPaid
 		status: transactionStatusEnum('status').default('pending').notNull(),
 		description: text('description'),
-		dueDate: timestamp('due_date'),
-		transactionDate: timestamp('transaction_date').defaultNow().notNull(),
+		rejectionReason: text('rejection_reason'), // If rejected, why?
+		dueDate: timestamp('due_date'), // When payment is due
+		requestDate: timestamp('request_date').defaultNow().notNull(), // When request was created
+		acceptedAt: timestamp('accepted_at'), // When request was accepted
+		completedAt: timestamp('completed_at'), // When loan was fully paid
+		rejectedAt: timestamp('rejected_at'), // When request was rejected
 		...timestamps,
 	},
 	table => [
 		uniqueIndex('transactions_public_id_idx').on(table.publicId),
 		index('transactions_borrower_id_idx').on(table.borrowerId),
-		index('transactions_requester_id_idx').on(table.requesterId),
+		index('transactions_lender_id_idx').on(table.lenderId),
 		index('transactions_borrower_id_status_idx').on(table.borrowerId, table.status),
-		index('transactions_borrower_id_type_idx').on(table.borrowerId, table.type),
+		index('transactions_lender_id_status_idx').on(table.lenderId, table.status),
 		index('transactions_status_idx').on(table.status),
 		index('transactions_due_date_idx').on(table.dueDate),
-		index('transactions_transaction_date_idx').on(table.transactionDate),
+		index('transactions_due_date_status_idx').on(table.dueDate, table.status),
 	],
 );
 

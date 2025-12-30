@@ -14,18 +14,35 @@ export type TransactionReturnType = Omit<
 export interface TransactionListReturnType {
 	id: string;
 	publicId: string;
-	contact: {
+	borrower: {
 		id: string;
 		name: string | null;
 		email: string;
 		image: string | null;
-	} | null;
+	};
+	lender: {
+		id: string;
+		name: string | null;
+		email: string;
+		image: string | null;
+	};
 	type: TransactionTypeEnum;
 	amount: number;
 	amountPaid: number;
+	remainingAmount: number;
+	rejectionReason: string | null;
+	requestDate: Date | null;
+	acceptedAt: Date | null;
+	completedAt: Date | null;
+	rejectedAt: Date | null;
 	status: TransactionStatusEnum;
 	description: string | null;
 	dueDate: Date | null;
 	createdAt: Date;
 	updatedAt: Date;
+}
+
+export interface TransactionEligibilityForDeletion {
+	ineligibleTransactions: number[];
+	eligibleTransactions: number[];
 }

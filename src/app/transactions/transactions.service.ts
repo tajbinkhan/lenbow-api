@@ -1,8 +1,25 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { and, count, eq, exists, gte, ilike, inArray, lte, ne, or, sql } from 'drizzle-orm';
+import {
+	aliasedTable,
+	and,
+	count,
+	eq,
+	exists,
+	gte,
+	ilike,
+	inArray,
+	lte,
+	ne,
+	or,
+	sql,
+	type SQL,
+} from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { AuthService } from 'src/app/auth/auth.service';
-import type { TransactionListReturnType } from 'src/app/transactions/@types/transactions.types';
+import type {
+	TransactionEligibilityForDeletion,
+	TransactionListReturnType,
+} from 'src/app/transactions/@types/transactions.types';
 import {
 	ValidateTransactionDto,
 	ValidateUpdateTransactionDto,
@@ -18,6 +35,7 @@ import {
 	TransactionSchemaType,
 	TransactionStatusEnum,
 	type ContactSchemaType,
+	type TransactionTypeEnum,
 } from 'src/database/types';
 
 @Injectable()
@@ -40,161 +58,161 @@ export class TransactionsService extends DrizzleService {
 		return newTransaction;
 	}
 
-	async getTransactionList(
-		filter: TransactionQuerySchemaType,
-		currentUserId: number,
-	): Promise<PaginatedResponse<TransactionListReturnType>> {
-		// Create date objects from string inputs if they exist
-		const fromDate = filter.from ? new Date(filter.from) : undefined;
-		const toDate = filter.to ? new Date(filter.to) : undefined;
+	// async getTransactionList(
+	// 	filter: TransactionQuerySchemaType,
+	// 	currentUserId: number,
+	// ): Promise<PaginatedResponse<TransactionListReturnType>> {
+	// 	// Create date objects from string inputs if they exist
+	// 	const fromDate = filter.from ? new Date(filter.from) : undefined;
+	// 	const toDate = filter.to ? new Date(filter.to) : undefined;
 
-		// If toDate exists, set it to the end of the day
-		if (toDate) {
-			toDate.setHours(23, 59, 59, 999);
-		}
+	// 	// If toDate exists, set it to the end of the day
+	// 	if (toDate) {
+	// 		toDate.setHours(23, 59, 59, 999);
+	// 	}
 
-		const q = filter.search ? `%${filter.search}%` : undefined;
+	// 	const q = filter.search ? `%${filter.search}%` : undefined;
 
-		// Casts for non-text columns used in ILIKE
-		const userPublicIdText = sql<string>`${schema.users.publicId}::text`;
-		const txPublicIdText = sql<string>`${schema.transactions.publicId}::text`;
-		const amountText = sql<string>`${schema.transactions.amount}::text`;
-		const amountPaidText = sql<string>`${schema.transactions.amountPaid}::text`;
+	// 	// Casts for non-text columns used in ILIKE
+	// 	const userPublicIdText = sql<string>`${schema.users.publicId}::text`;
+	// 	const txPublicIdText = sql<string>`${schema.transactions.publicId}::text`;
+	// 	const amountText = sql<string>`${schema.transactions.amount}::text`;
+	// 	const amountPaidText = sql<string>`${schema.transactions.amountPaid}::text`;
 
-		/**
-		 * Extended search:
-		 * - Match "other user" in the contact relationship (name/email/publicId), excluding myself
-		 * - Match transaction fields (description/publicId/amount/amountPaid)
-		 *
-		 * NOTE: We use casts for UUID/decimal fields so Postgres can ILIKE them.
-		 */
-		const searchExists =
-			filter.search && q
-				? or(
-						// Match "other user" in the contact relationship
-						exists(
-							this.getDb()
-								.select({ id: schema.users.id })
-								.from(schema.users)
-								.innerJoin(
-									schema.contacts,
-									or(
-										eq(schema.contacts.borrowerId, schema.users.id),
-										eq(schema.contacts.requesterId, schema.users.id),
-									),
-								)
-								.where(
-									and(
-										// correlate subquery to outer transactions row
-										eq(schema.contacts.id, schema.transactions.requesterId),
-										or(
-											ilike(schema.users.name, q),
-											ilike(schema.users.email, q),
-											ilike(userPublicIdText, q), // ✅ uuid -> text
-										),
-										// exclude myself
-										ne(schema.users.id, currentUserId),
-									),
-								),
-						),
+	// 	/**
+	// 	 * Extended search:
+	// 	 * - Match "other user" in the contact relationship (name/email/publicId), excluding myself
+	// 	 * - Match transaction fields (description/publicId/amount/amountPaid)
+	// 	 *
+	// 	 * NOTE: We use casts for UUID/decimal fields so Postgres can ILIKE them.
+	// 	 */
+	// 	const searchExists =
+	// 		filter.search && q
+	// 			? or(
+	// 					// Match "other user" in the contact relationship
+	// 					exists(
+	// 						this.getDb()
+	// 							.select({ id: schema.users.id })
+	// 							.from(schema.users)
+	// 							.innerJoin(
+	// 								schema.contacts,
+	// 								or(
+	// 									eq(schema.contacts.borrowerId, schema.users.id),
+	// 									eq(schema.contacts.requesterId, schema.users.id),
+	// 								),
+	// 							)
+	// 							.where(
+	// 								and(
+	// 									// correlate subquery to outer transactions row
+	// 									eq(schema.contacts.id, schema.transactions.requesterId),
+	// 									or(
+	// 										ilike(schema.users.name, q),
+	// 										ilike(schema.users.email, q),
+	// 										ilike(userPublicIdText, q), // ✅ uuid -> text
+	// 									),
+	// 									// exclude myself
+	// 									ne(schema.users.id, currentUserId),
+	// 								),
+	// 							),
+	// 					),
 
-						// Match transaction fields
-						ilike(schema.transactions.description, q),
-						ilike(txPublicIdText, q), // ✅ uuid -> text
-						ilike(amountText, q), // ✅ decimal -> text
-						ilike(amountPaidText, q), // ✅ decimal -> text
-					)
-				: undefined;
+	// 					// Match transaction fields
+	// 					ilike(schema.transactions.description, q),
+	// 					ilike(txPublicIdText, q), // ✅ uuid -> text
+	// 					ilike(amountText, q), // ✅ decimal -> text
+	// 					ilike(amountPaidText, q), // ✅ decimal -> text
+	// 				)
+	// 			: undefined;
 
-		const conditions = [
-			eq(schema.transactions.borrowerId, currentUserId),
-			searchExists,
-			filter.type ? inArray(schema.transactions.type, filter.type) : undefined,
-			filter.status ? inArray(schema.transactions.status, filter.status) : undefined,
-			fromDate ? gte(schema.transactions.createdAt, fromDate) : undefined,
-			toDate ? lte(schema.transactions.createdAt, toDate) : undefined,
-		].filter(Boolean);
+	// 	const conditions = [
+	// 		eq(schema.transactions.borrowerId, currentUserId),
+	// 		searchExists,
+	// 		filter.type ? inArray(schema.transactions.type, filter.type) : undefined,
+	// 		filter.status ? inArray(schema.transactions.status, filter.status) : undefined,
+	// 		fromDate ? gte(schema.transactions.createdAt, fromDate) : undefined,
+	// 		toDate ? lte(schema.transactions.createdAt, toDate) : undefined,
+	// 	].filter(Boolean);
 
-		const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+	// 	const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-		// Determine pagination parameters
-		let pagination;
-		let offset = 0;
-		let totalItems = 0;
+	// 	// Determine pagination parameters
+	// 	let pagination;
+	// 	let offset = 0;
+	// 	let totalItems = 0;
 
-		if (filter.page && filter.limit) {
-			// Get total count for pagination
-			totalItems = await this.getDb()
-				.select({
-					count: count(),
-				})
-				.from(schema.transactions)
-				.where(whereClause)
-				.then(result => result[0].count);
+	// 	if (filter.page && filter.limit) {
+	// 		// Get total count for pagination
+	// 		totalItems = await this.getDb()
+	// 			.select({
+	// 				count: count(),
+	// 			})
+	// 			.from(schema.transactions)
+	// 			.where(whereClause)
+	// 			.then(result => result[0].count);
 
-			const paginationManager = new PaginationManager(filter.page, filter.limit, totalItems);
-			const paginationResult = paginationManager.createPagination();
-			pagination = paginationResult.pagination;
-			offset = paginationResult.offset;
-		}
+	// 		const paginationManager = new PaginationManager(filter.page, filter.limit, totalItems);
+	// 		const paginationResult = paginationManager.createPagination();
+	// 		pagination = paginationResult.pagination;
+	// 		offset = paginationResult.offset;
+	// 	}
 
-		const transactionOrderBy = orderByColumn(schema.transactions, filter.sortBy, filter.sortOrder);
+	// 	const transactionOrderBy = orderByColumn(schema.transactions, filter.sortBy, filter.sortOrder);
 
-		// Determine which orderBy to use based on which table contains the field
-		const orderBy = transactionOrderBy;
+	// 	// Determine which orderBy to use based on which table contains the field
+	// 	const orderBy = transactionOrderBy;
 
-		// Build query with all possible combinations
-		const baseSelect = this.getDb()
-			.select({
-				id: schema.transactions.publicId,
-				publicId: schema.transactions.publicId,
-				contact: {
-					id: schema.users.publicId,
-					name: schema.users.name,
-					email: schema.users.email,
-					image: schema.users.image,
-				},
-				type: schema.transactions.type,
-				amount: schema.transactions.amount,
-				amountPaid: schema.transactions.amountPaid,
-				status: schema.transactions.status,
-				description: schema.transactions.description,
-				dueDate: schema.transactions.dueDate,
-				createdAt: schema.transactions.createdAt,
-				updatedAt: schema.transactions.updatedAt,
-			})
-			.from(schema.transactions)
-			.leftJoin(schema.contacts, eq(schema.transactions.requesterId, schema.contacts.id))
-			.leftJoin(schema.users, eq(schema.transactions.borrowerId, schema.users.id))
-			.where(whereClause);
+	// 	// Build query with all possible combinations
+	// 	const baseSelect = this.getDb()
+	// 		.select({
+	// 			id: schema.transactions.publicId,
+	// 			publicId: schema.transactions.publicId,
+	// 			contact: {
+	// 				id: schema.users.publicId,
+	// 				name: schema.users.name,
+	// 				email: schema.users.email,
+	// 				image: schema.users.image,
+	// 			},
+	// 			type: schema.transactions.type,
+	// 			amount: schema.transactions.amount,
+	// 			amountPaid: schema.transactions.amountPaid,
+	// 			status: schema.transactions.status,
+	// 			description: schema.transactions.description,
+	// 			dueDate: schema.transactions.dueDate,
+	// 			createdAt: schema.transactions.createdAt,
+	// 			updatedAt: schema.transactions.updatedAt,
+	// 		})
+	// 		.from(schema.transactions)
+	// 		.leftJoin(schema.contacts, eq(schema.transactions.requesterId, schema.contacts.id))
+	// 		.leftJoin(schema.users, eq(schema.transactions.borrowerId, schema.users.id))
+	// 		.where(whereClause);
 
-		let rawData;
-		// Handle pagination and ordering
-		if (filter.page && filter.limit) {
-			// Paginated query
-			if (offset && orderBy) {
-				rawData = await baseSelect.limit(filter.limit).offset(offset).orderBy(orderBy);
-			} else if (offset) {
-				rawData = await baseSelect.limit(filter.limit).offset(offset);
-			} else if (orderBy) {
-				rawData = await baseSelect.limit(filter.limit).orderBy(orderBy);
-			} else {
-				rawData = await baseSelect.limit(filter.limit);
-			}
-		} else {
-			// Non-paginated query
-			if (orderBy) {
-				rawData = await baseSelect.orderBy(orderBy);
-			} else {
-				rawData = await baseSelect;
-			}
-		}
+	// 	let rawData;
+	// 	// Handle pagination and ordering
+	// 	if (filter.page && filter.limit) {
+	// 		// Paginated query
+	// 		if (offset && orderBy) {
+	// 			rawData = await baseSelect.limit(filter.limit).offset(offset).orderBy(orderBy);
+	// 		} else if (offset) {
+	// 			rawData = await baseSelect.limit(filter.limit).offset(offset);
+	// 		} else if (orderBy) {
+	// 			rawData = await baseSelect.limit(filter.limit).orderBy(orderBy);
+	// 		} else {
+	// 			rawData = await baseSelect.limit(filter.limit);
+	// 		}
+	// 	} else {
+	// 		// Non-paginated query
+	// 		if (orderBy) {
+	// 			rawData = await baseSelect.orderBy(orderBy);
+	// 		} else {
+	// 			rawData = await baseSelect;
+	// 		}
+	// 	}
 
-		return {
-			data: rawData,
-			pagination,
-		};
-	}
+	// 	return {
+	// 		data: rawData,
+	// 		pagination,
+	// 	};
+	// }
 
 	async getRequestedTransactionList(
 		filter: TransactionQuerySchemaType,
@@ -235,14 +253,14 @@ export class TransactionsService extends DrizzleService {
 								.innerJoin(
 									schema.contacts,
 									or(
-										eq(schema.contacts.borrowerId, schema.users.id),
-										eq(schema.contacts.requesterId, schema.users.id),
+										eq(schema.contacts.connectedUserId, schema.users.id),
+										eq(schema.contacts.requestedUserId, schema.users.id),
 									),
 								)
 								.where(
 									and(
 										// correlate subquery to outer transactions row
-										eq(schema.contacts.id, schema.transactions.requesterId),
+										eq(schema.contacts.id, schema.transactions.lenderId),
 										or(
 											ilike(schema.users.name, q),
 											ilike(schema.users.email, q),
@@ -262,10 +280,33 @@ export class TransactionsService extends DrizzleService {
 					)
 				: undefined;
 
+		function filterTypeCondition(input: TransactionTypeEnum[]): SQL<unknown> | undefined {
+			if (input.includes('lend') && input.includes('borrow')) {
+				return or(
+					eq(schema.transactions.borrowerId, currentUserId),
+					eq(schema.transactions.lenderId, currentUserId),
+				);
+			}
+			if (input.includes('lend')) {
+				return eq(schema.transactions.lenderId, currentUserId);
+			}
+			if (input.includes('borrow')) {
+				return eq(schema.transactions.borrowerId, currentUserId);
+			}
+			return or(
+				eq(schema.transactions.borrowerId, currentUserId),
+				eq(schema.transactions.lenderId, currentUserId),
+			);
+		}
+
 		const conditions = [
-			eq(schema.transactions.borrowerId, currentUserId),
+			filter.type
+				? filterTypeCondition(filter.type)
+				: or(
+						eq(schema.transactions.borrowerId, currentUserId),
+						eq(schema.transactions.lenderId, currentUserId),
+					),
 			searchExists,
-			filter.type ? inArray(schema.transactions.type, filter.type) : undefined,
 			filter.status ? inArray(schema.transactions.status, filter.status) : undefined,
 			fromDate ? gte(schema.transactions.createdAt, fromDate) : undefined,
 			toDate ? lte(schema.transactions.createdAt, toDate) : undefined,
@@ -299,29 +340,46 @@ export class TransactionsService extends DrizzleService {
 		// Determine which orderBy to use based on which table contains the field
 		const orderBy = transactionOrderBy;
 
+		// Create aliases for joining users table twice
+		const borrowerUser = aliasedTable(schema.users, 'borrower');
+		const lenderUser = aliasedTable(schema.users, 'lender');
+
 		// Build query with all possible combinations
 		const baseSelect = this.getDb()
 			.select({
 				id: schema.transactions.publicId,
 				publicId: schema.transactions.publicId,
-				contact: {
-					id: schema.users.publicId,
-					name: schema.users.name,
-					email: schema.users.email,
-					image: schema.users.image,
+				borrowerId: schema.transactions.borrowerId,
+				lenderId: schema.transactions.lenderId,
+				borrower: {
+					id: borrowerUser.publicId,
+					name: borrowerUser.name,
+					email: borrowerUser.email,
+					image: borrowerUser.image,
 				},
-				type: schema.transactions.type,
+				lender: {
+					id: lenderUser.publicId,
+					name: lenderUser.name,
+					email: lenderUser.email,
+					image: lenderUser.image,
+				},
 				amount: schema.transactions.amount,
 				amountPaid: schema.transactions.amountPaid,
+				remainingAmount: schema.transactions.remainingAmount,
 				status: schema.transactions.status,
 				description: schema.transactions.description,
+				rejectionReason: schema.transactions.rejectionReason,
 				dueDate: schema.transactions.dueDate,
+				requestDate: schema.transactions.requestDate,
+				acceptedAt: schema.transactions.acceptedAt,
+				completedAt: schema.transactions.completedAt,
+				rejectedAt: schema.transactions.rejectedAt,
 				createdAt: schema.transactions.createdAt,
 				updatedAt: schema.transactions.updatedAt,
 			})
 			.from(schema.transactions)
-			.leftJoin(schema.contacts, eq(schema.transactions.requesterId, schema.contacts.id))
-			.leftJoin(schema.users, eq(schema.transactions.borrowerId, schema.users.id))
+			.innerJoin(borrowerUser, eq(schema.transactions.borrowerId, borrowerUser.id))
+			.innerJoin(lenderUser, eq(schema.transactions.lenderId, lenderUser.id))
 			.where(whereClause);
 
 		let rawData;
@@ -346,8 +404,25 @@ export class TransactionsService extends DrizzleService {
 			}
 		}
 
+		const convertedData: TransactionListReturnType[] = rawData.map(tx => {
+			// Determine type based on currentUserId
+			let type: 'lend' | 'borrow' = 'borrow';
+
+			if (tx.lenderId === currentUserId) {
+				type = 'lend';
+			}
+
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
+			const { borrowerId, lenderId, ...rest } = tx;
+
+			return {
+				...rest,
+				type,
+			};
+		});
+
 		return {
-			data: rawData,
+			data: convertedData,
 			pagination,
 		};
 	}
@@ -440,10 +515,7 @@ export class TransactionsService extends DrizzleService {
 		return false;
 	}
 
-	checkEligibilityForDeleting(data: TransactionSchemaType[]): {
-		ineligibleTransactions: number[];
-		eligibleTransactions: number[];
-	} {
+	checkEligibilityForDeleting(data: TransactionSchemaType[]): TransactionEligibilityForDeletion {
 		const ineligibleTransactions: number[] = [];
 		const eligibleTransactions: number[] = [];
 
@@ -480,26 +552,26 @@ export class TransactionsService extends DrizzleService {
 
 	// Transaction contacts
 	async getOrCreateContactByPublicId(
-		borrowerId: string,
-		requesterId: number,
+		lenderId: string,
+		borrowerId: number,
 	): Promise<ContactSchemaType> {
 		// Find user by public ID
-		const borrower = await this.authService.findUserByPublicId(borrowerId);
+		const lender = await this.authService.findUserByPublicId(lenderId);
 
-		if (borrower.id === requesterId) {
+		if (lender.id === borrowerId) {
 			throw new BadRequestException('You cannot request a loan or borrow from yourself');
 		}
 
 		const getOrCreateContact = await this.getDb()
 			.insert(schema.contacts)
 			.values({
-				borrowerId: borrower.id,
-				requesterId,
+				connectedUserId: lender.id,
+				requestedUserId: borrowerId,
 			})
 			.onConflictDoUpdate({
-				target: [schema.contacts.borrowerId, schema.contacts.requesterId],
+				target: [schema.contacts.connectedUserId, schema.contacts.requestedUserId],
 				set: {
-					borrowerId: schema.contacts.borrowerId, // no-op update
+					connectedUserId: schema.contacts.connectedUserId, // no-op update
 				},
 			})
 			.returning()

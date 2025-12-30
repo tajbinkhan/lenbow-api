@@ -12,6 +12,12 @@ import z from 'zod';
 
 const TRANSACTION_SORTABLE_FIELDS: readonly SortableField[] = [
 	{ name: 'id', queryName: 'id' },
+	{ name: 'name', queryName: 'name' },
+	{ name: 'email', queryName: 'email' },
+	{ name: 'amount', queryName: 'amount' },
+	{ name: 'status', queryName: 'status' },
+	{ name: 'type', queryName: 'type' },
+	{ name: 'requestDate', queryName: 'requestDate' },
 	{ name: 'createdAt', queryName: 'createdAt' },
 ] as const;
 
@@ -40,18 +46,23 @@ export const transactionQuerySchema = baseQuerySchema(TRANSACTION_SORTABLE_FIELD
 
 export const validateTransactionSchema = z.object({
 	borrowerId: validatePositiveNumber('Borrower ID'),
-	requesterId: validatePositiveNumber('Requester ID'),
-	type: validateEnum('Transaction Type', transactionTypeEnum.enumValues),
+	lenderId: validatePositiveNumber('Lender ID'),
 	amount: validatePositiveNumber('Amount'),
 	amountPaid: validatePositiveNumber('Amount Paid').optional(),
+	remainingAmount: validatePositiveNumber('Remaining Amount').optional(),
 	status: validateEnum('Transaction Status', transactionStatusEnum.enumValues),
 	description: validateString('Description').optional(),
+	rejectionReason: validateString('Rejection Reason').optional(),
 	dueDate: validateDate('Due Date').optional(),
+	requestDate: validateDate('Request Date').optional(),
+	acceptedAt: validateDate('Accepted At').optional(),
+	completedAt: validateDate('Completed At').optional(),
+	rejectedAt: validateDate('Rejected At').optional(),
 });
 
 export const validateUpdateTransactionSchema = validateTransactionSchema.omit({
 	borrowerId: true,
-	requesterId: true,
+	lenderId: true,
 });
 
 export const validateDeleteTransactionSchema = z.object({

@@ -34,30 +34,30 @@ import { TransactionsService } from './transactions.service';
 export class TransactionsController {
 	constructor(private readonly transactionsService: TransactionsService) {}
 
-	@UseGuards(JwtAuthGuard)
-	@Get('')
-	async getTransactionList(
-		@Req() req: Request,
-		@Query() query: TransactionQuerySchemaType,
-	): Promise<ApiResponse<TransactionListReturnType[]>> {
-		const userId = req.user?.id;
+	// @UseGuards(JwtAuthGuard)
+	// @Get('')
+	// async getTransactionList(
+	// 	@Req() req: Request,
+	// 	@Query() query: TransactionQuerySchemaType,
+	// ): Promise<ApiResponse<TransactionListReturnType[]>> {
+	// 	const userId = req.user?.id;
 
-		const validate = transactionQuerySchema.safeParse(query);
-		if (!validate.success) {
-			throw new BadRequestException(
-				`Validation failed: ${validate.error.issues.map(issue => issue.message).join(', ')}`,
-			);
-		}
+	// 	const validate = transactionQuerySchema.safeParse(query);
+	// 	if (!validate.success) {
+	// 		throw new BadRequestException(
+	// 			`Validation failed: ${validate.error.issues.map(issue => issue.message).join(', ')}`,
+	// 		);
+	// 	}
 
-		const transactions = await this.transactionsService.getTransactionList(validate.data, userId!);
+	// 	const transactions = await this.transactionsService.getTransactionList(validate.data, userId!);
 
-		return createApiResponse(
-			HttpStatus.OK,
-			'Transaction list fetched successfully',
-			transactions.data,
-			transactions.pagination,
-		);
-	}
+	// 	return createApiResponse(
+	// 		HttpStatus.OK,
+	// 		'Transaction list fetched successfully',
+	// 		transactions.data,
+	// 		transactions.pagination,
+	// 	);
+	// }
 
 	@UseGuards(JwtAuthGuard)
 	@Post('')
@@ -66,17 +66,17 @@ export class TransactionsController {
 		@Req() req: Request,
 	): Promise<ApiResponse<TransactionReturnType>> {
 		const borrowerId = Number(req.user?.id);
-		const requesterId = String(validateTransactionDto.requesterId);
+		const lenderId = String(validateTransactionDto.lenderId);
 
 		const getContact = await this.transactionsService.getOrCreateContactByPublicId(
-			requesterId,
+			lenderId,
 			borrowerId,
 		);
 
 		const extendedDto: ValidateTransactionDto = {
 			...validateTransactionDto,
-			borrowerId: getContact.borrowerId,
-			requesterId: getContact.requesterId,
+			borrowerId: getContact.requestedUserId,
+			lenderId: getContact.connectedUserId,
 			status: 'pending',
 		};
 
@@ -144,7 +144,10 @@ export class TransactionsController {
 			);
 		}
 
-		const transactions = await this.transactionsService.getTransactionList(validate.data, userId!);
+		const transactions = await this.transactionsService.getRequestedTransactionList(
+			validate.data,
+			userId!,
+		);
 
 		return createApiResponse(
 			HttpStatus.OK,
