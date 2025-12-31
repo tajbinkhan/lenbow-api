@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { DiscoveryModule } from '@nestjs/core';
+import { AppController } from './app.controller';
 import { AuthModule } from './app/auth/auth.module';
 import { TransactionsModule } from './app/transactions/transactions.module';
 import { CryptoModule } from './core/crypto/crypto.module';
@@ -21,6 +22,6 @@ import { DatabaseModule } from './database/database.module';
 		AuthModule,
 		TransactionsModule,
 	],
-	controllers: [],
+	controllers: [AppController],
 })
 export class AppModule {}
