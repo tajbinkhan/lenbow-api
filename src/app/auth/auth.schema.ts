@@ -1,10 +1,10 @@
+import z from 'zod';
 import {
 	validateEmail,
 	validatePassword,
 	validatePhoneNumber,
 	validateString,
-} from 'src/core/validators/commonRules';
-import z from 'zod';
+} from '../../core/validators/commonRules';
 
 export const loginSchema = z.object({
 	email: validateEmail,

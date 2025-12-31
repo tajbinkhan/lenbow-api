@@ -45,7 +45,7 @@ async function updateSchema() {
 		const importLines = modelFiles
 			.map(f => {
 				const name = getPascalSchemaName(f);
-				const importPath = `src/models/drizzle/${f.replace(/\.ts$/, '')}`;
+				const importPath = `../models/drizzle/${f.replace(/\.ts$/, '')}`;
 				return `import * as ${name} from "${importPath}";`;
 			})
 			.join('\n');

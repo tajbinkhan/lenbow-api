@@ -3,16 +3,16 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { and, eq } from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { CreateUser, UserWithoutPassword } from 'src/app/auth/@types/auth.types';
-import { LoginDto } from 'src/app/auth/auth.schema';
-import { AuthSession } from 'src/app/auth/auth.session';
-import { GoogleProfile } from 'src/app/auth/strategies/google.strategy';
-import { sessionTimeout } from 'src/core/constants';
-import { CryptoService } from 'src/core/crypto/crypto.service';
-import { DATABASE_CONNECTION } from 'src/database/connection';
-import schema from 'src/database/schema';
-import DrizzleService from 'src/database/service';
-import { UserSchemaType } from 'src/database/types';
+import { sessionTimeout } from '../../core/constants';
+import { CryptoService } from '../../core/crypto/crypto.service';
+import { DATABASE_CONNECTION } from '../../database/connection';
+import schema from '../../database/schema';
+import DrizzleService from '../../database/service';
+import { UserSchemaType } from '../../database/types';
+import { CreateUser, UserWithoutPassword } from './@types/auth.types';
+import { LoginDto } from './auth.schema';
+import { AuthSession } from './auth.session';
+import { GoogleProfile } from './strategies/google.strategy';
 
 interface UserInformation {
 	userId: number;

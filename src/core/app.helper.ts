@@ -1,5 +1,5 @@
 import type { CookieOptions } from 'express';
-import { blackListDomains } from 'src/core/constants';
+import { blackListDomains } from './constants';
 
 interface SameSiteCookieConfig {
 	sameSite: CookieOptions['sameSite'];

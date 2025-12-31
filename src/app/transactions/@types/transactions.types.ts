@@ -2,7 +2,7 @@ import {
 	TransactionSchemaType,
 	type TransactionStatusEnum,
 	type TransactionTypeEnum,
-} from 'src/database/types';
+} from '../../../database/types';
 
 export type TransactionReturnType = Omit<
 	TransactionSchemaType,

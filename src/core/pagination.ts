@@ -1,4 +1,4 @@
-import { Pagination } from 'src/core/api-response.interceptor';
+import { Pagination } from './api-response.interceptor';
 
 export default class PaginationManager {
 	page: number;

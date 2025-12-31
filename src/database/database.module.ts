@@ -1,6 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import createPool, { DATABASE_CONNECTION } from 'src/database/connection';
+import createPool, { DATABASE_CONNECTION } from './connection';
 
 @Global()
 @Module({

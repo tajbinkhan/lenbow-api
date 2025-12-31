@@ -3,12 +3,12 @@ import { and, desc, eq } from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Request } from 'express';
 
-import { SessionDataType } from 'src/app/auth/@types/auth.types';
-import { DATABASE_CONNECTION } from 'src/database/connection';
-import schema from 'src/database/schema';
-import DrizzleService from 'src/database/service';
-import { SessionSchemaType } from 'src/database/types';
 import { UAParser } from 'ua-parser-js';
+import { DATABASE_CONNECTION } from '../../database/connection';
+import schema from '../../database/schema';
+import DrizzleService from '../../database/service';
+import { SessionSchemaType } from '../../database/types';
+import { SessionDataType } from './@types/auth.types';
 
 @Injectable()
 export class AuthSession extends DrizzleService {

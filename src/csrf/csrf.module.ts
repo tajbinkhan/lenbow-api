@@ -1,5 +1,5 @@
 import { Global, Module } from '@nestjs/common';
-import { CsrfController } from 'src/csrf/csrf.controller';
+import { CsrfController } from './csrf.controller';
 import { CsrfGuard } from './csrf.guard';
 import { CsrfService } from './csrf.service';
 

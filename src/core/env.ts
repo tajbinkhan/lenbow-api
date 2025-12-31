@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { validateEnum, validateString } from 'src/core/validators/commonRules';
+import { validateEnum, validateString } from './validators/commonRules';
 
 // const smtpEnvSchema = z.object({
 // 	SMTP_HOST: validateString('SMTP_HOST'),

@@ -14,11 +14,9 @@ import {
 	UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { JwtAuthGuard } from 'src/app/auth/auth.guard';
-import type {
-	TransactionListReturnType,
-	TransactionReturnType,
-} from 'src/app/transactions/@types/transactions.types';
+import { createApiResponse, type ApiResponse } from '../../core/api-response.interceptor';
+import { JwtAuthGuard } from '../auth/auth.guard';
+import type { TransactionListReturnType, TransactionReturnType } from './@types/transactions.types';
 import {
 	transactionQuerySchema,
 	validateTransactionSchema,
@@ -26,8 +24,7 @@ import {
 	type ValidateDeleteTransactionDto,
 	type ValidateTransactionDto,
 	type ValidateUpdateTransactionDto,
-} from 'src/app/transactions/transactions.schema';
-import { createApiResponse, type ApiResponse } from 'src/core/api-response.interceptor';
+} from './transactions.schema';
 import { TransactionsService } from './transactions.service';
 
 @Controller('transactions')

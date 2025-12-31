@@ -1,6 +1,6 @@
 import { Controller, Get, Req, Res } from '@nestjs/common';
 import type { Request, Response } from 'express';
-import { CsrfService } from 'src/csrf/csrf.service';
+import { CsrfService } from './csrf.service';
 
 @Controller('csrf')
 export class CsrfController {

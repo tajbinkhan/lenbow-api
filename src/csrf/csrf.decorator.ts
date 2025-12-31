@@ -1,5 +1,5 @@
 import { SetMetadata } from '@nestjs/common';
-import { SKIP_CSRF_KEY } from 'src/csrf/csrf.guard';
+import { SKIP_CSRF_KEY } from './csrf.guard';
 
 /**
  * Decorator to skip CSRF validation on specific routes

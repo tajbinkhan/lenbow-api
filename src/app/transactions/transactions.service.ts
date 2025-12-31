@@ -15,28 +15,28 @@ import {
 	type SQL,
 } from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { AuthService } from 'src/app/auth/auth.service';
-import type {
-	TransactionEligibilityForDeletion,
-	TransactionListReturnType,
-} from 'src/app/transactions/@types/transactions.types';
-import {
-	ValidateTransactionDto,
-	ValidateUpdateTransactionDto,
-	type TransactionQuerySchemaType,
-} from 'src/app/transactions/transactions.schema';
-import type { PaginatedResponse } from 'src/core/api-response.interceptor';
-import PaginationManager from 'src/core/pagination';
-import { DATABASE_CONNECTION } from 'src/database/connection';
-import { orderByColumn } from 'src/database/helpers';
-import schema from 'src/database/schema';
-import DrizzleService from 'src/database/service';
+import type { PaginatedResponse } from '../../core/api-response.interceptor';
+import PaginationManager from '../../core/pagination';
+import { DATABASE_CONNECTION } from '../../database/connection';
+import { orderByColumn } from '../../database/helpers';
+import schema from '../../database/schema';
+import DrizzleService from '../../database/service';
 import {
 	TransactionSchemaType,
 	TransactionStatusEnum,
 	type ContactSchemaType,
 	type TransactionTypeEnum,
-} from 'src/database/types';
+} from '../../database/types';
+import { AuthService } from '../auth/auth.service';
+import type {
+	TransactionEligibilityForDeletion,
+	TransactionListReturnType,
+} from './@types/transactions.types';
+import {
+	ValidateTransactionDto,
+	ValidateUpdateTransactionDto,
+	type TransactionQuerySchemaType,
+} from './transactions.schema';
 
 @Injectable()
 export class TransactionsService extends DrizzleService {

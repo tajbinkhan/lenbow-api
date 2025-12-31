@@ -11,25 +11,20 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Request as ExpressRequest, Response } from 'express';
+import { type ApiResponse, createApiResponse } from '../../core/api-response.interceptor';
+import AppHelpers from '../../core/app.helper';
+import { sessionTimeout } from '../../core/constants';
+import { EnvType } from '../../core/env';
 import type {
 	CreateUser,
 	UserWithoutPassword,
 	UserWithoutPasswordResponse,
-} from 'src/app/auth/@types/auth.types';
-import { GoogleAuthGuard, JwtAuthGuard } from 'src/app/auth/auth.guard';
-import {
-	type LoginDto,
-	loginSchema,
-	type RegisterDto,
-	registerSchema,
-} from 'src/app/auth/auth.schema';
-import { AuthSession } from 'src/app/auth/auth.session';
-import { GoogleProfile } from 'src/app/auth/strategies/google.strategy';
-import { type ApiResponse, createApiResponse } from 'src/core/api-response.interceptor';
-import AppHelpers from 'src/core/app.helper';
-import { sessionTimeout } from 'src/core/constants';
-import { EnvType } from 'src/core/env';
+} from './@types/auth.types';
+import { GoogleAuthGuard, JwtAuthGuard } from './auth.guard';
+import { type LoginDto, loginSchema, type RegisterDto, registerSchema } from './auth.schema';
 import { AuthService } from './auth.service';
+import { AuthSession } from './auth.session';
+import { GoogleProfile } from './strategies/google.strategy';
 
 @Controller('auth')
 export class AuthController {

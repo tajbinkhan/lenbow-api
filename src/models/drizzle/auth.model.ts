@@ -10,7 +10,7 @@ import {
 	uuid,
 	varchar,
 } from 'drizzle-orm/pg-core';
-import { timestamps } from 'src/database/helpers';
+import { timestamps } from '../../database/helpers';
 
 export const users = pgTable(
 	'users',

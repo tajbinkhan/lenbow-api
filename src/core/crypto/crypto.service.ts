@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'crypto';
 
-import { EnvType } from 'src/core/env';
+import { EnvType } from '../env';
 
 @Injectable()
 export class CryptoService {

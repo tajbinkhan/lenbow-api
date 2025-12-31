@@ -1,4 +1,4 @@
-import { SessionSchemaType, UserSchemaType } from 'src/database/types';
+import { SessionSchemaType, UserSchemaType } from '../../../database/types';
 
 export type UserWithoutPassword = Omit<UserSchemaType, 'password'>;
 

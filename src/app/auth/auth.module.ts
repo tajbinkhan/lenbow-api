@@ -2,13 +2,13 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { AuthSession } from 'src/app/auth/auth.session';
-import { GoogleStrategy } from 'src/app/auth/strategies/google.strategy';
-import { JwtStrategy } from 'src/app/auth/strategies/jwt.strategy';
-import { sessionTimeout } from 'src/core/constants';
-import type { EnvType } from 'src/core/env';
+import { sessionTimeout } from '../../core/constants';
+import type { EnvType } from '../../core/env';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { AuthSession } from './auth.session';
+import { GoogleStrategy } from './strategies/google.strategy';
+import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
 	imports: [

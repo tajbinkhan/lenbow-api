@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { Profile, Strategy } from 'passport-google-oauth20';
-import type { EnvType } from 'src/core/env';
+import type { EnvType } from '../../../core/env';
 
 export interface GoogleProfile {
 	email: string;

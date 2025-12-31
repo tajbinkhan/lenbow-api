@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { doubleCsrf } from 'csrf-csrf';
 import type { Request, Response } from 'express';
-import { EnvType } from 'src/core/env';
+import { EnvType } from '../core/env';
 
 @Injectable()
 export class CsrfService {

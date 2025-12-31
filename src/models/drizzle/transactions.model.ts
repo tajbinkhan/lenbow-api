@@ -9,9 +9,9 @@ import {
 	uniqueIndex,
 	uuid,
 } from 'drizzle-orm/pg-core';
-import { timestamps } from 'src/database/helpers';
-import { users } from 'src/models/drizzle/auth.model';
-import { transactionStatusEnum } from 'src/models/drizzle/enum.models';
+import { timestamps } from '../../database/helpers';
+import { users } from './auth.model';
+import { transactionStatusEnum } from './enum.models';
 
 // Contacts table
 export const contacts = pgTable(

@@ -4,10 +4,10 @@ import { PassportStrategy } from '@nestjs/passport';
 import type { Request } from 'express';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
-import { AuthSession } from 'src/app/auth/auth.session';
-import { CryptoService } from 'src/core/crypto/crypto.service';
-import type { EnvType } from 'src/core/env';
+import { CryptoService } from '../../../core/crypto/crypto.service';
+import type { EnvType } from '../../../core/env';
 import { AuthService } from '../auth.service';
+import { AuthSession } from '../auth.session';
 
 interface JwtPayload {
 	sub: number;

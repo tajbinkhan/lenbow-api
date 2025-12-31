@@ -1,4 +1,4 @@
-import { UserSchemaType } from 'src/database/types';
+import { UserSchemaType } from '../database/types';
 
 declare global {
 	namespace Express {

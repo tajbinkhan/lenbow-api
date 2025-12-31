@@ -1,4 +1,5 @@
-import { baseQuerySchema, type SortableField } from 'src/core/validators/baseQuery.schema';
+import z from 'zod';
+import { baseQuerySchema, type SortableField } from '../../core/validators/baseQuery.schema';
 import {
 	validateArray,
 	validateDate,
@@ -6,9 +7,8 @@ import {
 	validatePositiveNumber,
 	validateString,
 	validateUUID,
-} from 'src/core/validators/commonRules';
-import { transactionStatusEnum, transactionTypeEnum } from 'src/models/drizzle/enum.models';
-import z from 'zod';
+} from '../../core/validators/commonRules';
+import { transactionStatusEnum, transactionTypeEnum } from '../../models/drizzle/enum.models';
 
 const TRANSACTION_SORTABLE_FIELDS: readonly SortableField[] = [
 	{ name: 'id', queryName: 'id' },
