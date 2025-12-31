@@ -1,6 +1,7 @@
 # Guide: Removing Testing Packages from NestJS Project
 
-This document outlines the steps taken to completely remove testing functionality from this NestJS project.
+This document outlines the steps taken to completely remove testing functionality from this NestJS
+project.
 
 ## Packages Removed from `devDependencies`
 
@@ -55,14 +56,13 @@ The following npm scripts were updated to remove test directory references:
 
 ## Files Checked
 
-✅ No `.spec.ts` files found in the project
-✅ No `.test.ts` files found in the project
-✅ No `jest.config.*` files found in the project
-✅ No `test/` directory exists
+✅ No `.spec.ts` files found in the project ✅ No `.test.ts` files found in the project ✅ No
+`jest.config.*` files found in the project ✅ No `test/` directory exists
 
 ## Status: Complete
 
-All testing-related packages, configurations, and references have been successfully removed from the project. The project is now test-free.
+All testing-related packages, configurations, and references have been successfully removed from the
+project. The project is now test-free.
 
 ## To Reinstall Testing (If Needed)
 

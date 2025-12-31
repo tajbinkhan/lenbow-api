@@ -1,11 +1,14 @@
 # CSRF Protection Implementation
 
 ## Overview
-This project uses a professional, type-safe CSRF protection implementation with NestJS dependency injection.
+
+This project uses a professional, type-safe CSRF protection implementation with NestJS dependency
+injection.
 
 ## Architecture
 
 ### Files
+
 - `csrf.service.ts` - Injectable service with typed ConfigService integration
 - `csrf.module.ts` - Global module exporting CSRF functionality
 - `csrf.guard.ts` - Guard for automatic CSRF validation
@@ -16,21 +19,23 @@ This project uses a professional, type-safe CSRF protection implementation with 
 ### 1. Apply CSRF Guard Globally (Recommended)
 
 In `main.ts`:
+
 ```typescript
 import { NestFactory, Reflector } from '@nestjs/core';
+
 import { AppModule } from './app.module';
 import { CsrfGuard } from './core/csrf.guard';
 import { CsrfService } from './core/csrf.service';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+	const app = await NestFactory.create(AppModule);
 
-  // Apply CSRF guard globally
-  const reflector = app.get(Reflector);
-  const csrfService = app.get(CsrfService);
-  app.useGlobalGuards(new CsrfGuard(csrfService, reflector));
+	// Apply CSRF guard globally
+	const reflector = app.get(Reflector);
+	const csrfService = app.get(CsrfService);
+	app.useGlobalGuards(new CsrfGuard(csrfService, reflector));
 
-  await app.listen(3000);
+	await app.listen(3000);
 }
 bootstrap();
 ```
@@ -104,36 +109,36 @@ export class CustomService {
 ## Client-Side Integration
 
 ### Fetch the token first:
+
 ```javascript
 const response = await fetch('/auth/csrf-token');
 const { csrfToken } = await response.json();
 ```
 
 ### Include in subsequent requests:
+
 ```javascript
 fetch('/api/users', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'X-CSRF-Token': csrfToken
-  },
-  body: JSON.stringify({ name: 'John' })
+	method: 'POST',
+	headers: {
+		'Content-Type': 'application/json',
+		'X-CSRF-Token': csrfToken,
+	},
+	body: JSON.stringify({ name: 'John' }),
 });
 ```
 
 ## Benefits of This Implementation
 
-✅ **Type-Safe**: Uses typed ConfigService with EnvType
-✅ **Dependency Injection**: Proper NestJS patterns
-✅ **No `undefined` Issues**: ConfigService ensures env vars exist
-✅ **Global Module**: Available throughout the app
-✅ **Flexible**: Use guard globally or per-route
-✅ **Easy to Test**: Injectable services are mockable
-✅ **Production-Ready**: Follows enterprise best practices
+✅ **Type-Safe**: Uses typed ConfigService with EnvType ✅ **Dependency Injection**: Proper NestJS
+patterns ✅ **No `undefined` Issues**: ConfigService ensures env vars exist ✅ **Global Module**:
+Available throughout the app ✅ **Flexible**: Use guard globally or per-route ✅ **Easy to Test**:
+Injectable services are mockable ✅ **Production-Ready**: Follows enterprise best practices
 
 ## Configuration
 
 Environment variables (validated via `env.ts`):
+
 - `SECRET` - Required, used for CSRF token generation
 
 ## Security Notes

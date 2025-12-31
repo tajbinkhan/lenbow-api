@@ -15,7 +15,7 @@
 		"predb:clear": "node update‑schema.mjs",
 		"predb:seed": "node update‑schema.mjs",
 		"build": "nest build",
-		"format": "prettier --write \"src/**/*.ts\"",
+		"format": "prettier --write .",
 		"start": "nest start",
 		"dev": "nest start --watch",
 		"debug": "nest start --debug --watch",
