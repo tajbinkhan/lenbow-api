@@ -17,6 +17,7 @@ import type { Request } from 'express';
 import { createApiResponse, type ApiResponse } from '../../core/api-response.interceptor';
 import { validateUUID } from '../../core/validators/commonRules';
 import { JwtAuthGuard } from '../auth/auth.guard';
+import { AuthService } from '../auth/auth.service';
 import type {
 	ConnectedContactList,
 	TransactionListReturnType,
@@ -34,7 +35,10 @@ import { TransactionsService } from './transactions.service';
 
 @Controller('transactions')
 export class TransactionsController {
-	constructor(private readonly transactionsService: TransactionsService) {}
+	constructor(
+		private readonly transactionsService: TransactionsService,
+		private readonly authService: AuthService,
+	) {}
 
 	@UseGuards(JwtAuthGuard)
 	@Get('')
@@ -181,19 +185,31 @@ export class TransactionsController {
 
 	@UseGuards(JwtAuthGuard)
 	@Get('/connected-contacts')
-	async getConnectedContactList(
-		@Req() req: Request,
-		@Query('search') search: string,
-	): Promise<ApiResponse<ConnectedContactList[]>> {
+	async getConnectedContactList(@Req() req: Request): Promise<ApiResponse<ConnectedContactList[]>> {
 		const currentUserId = req.user?.id;
 
-		if (!search || !search.trim()) {
-			throw new BadRequestException('Search query cannot be empty');
-		}
-
-		const contacts = await this.transactionsService.getConnectedContacts(search, currentUserId!);
+		const contacts = await this.transactionsService.getConnectedContacts(currentUserId!);
 
 		return createApiResponse(HttpStatus.OK, 'Connected contacts fetched successfully', contacts);
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@Get('/contact/:publicId')
+	async getContactByPublicId(
+		@Param('publicId', ParseUUIDPipe) publicId: string,
+	): Promise<ApiResponse<ConnectedContactList>> {
+		const user = await this.authService.findUserByPublicId(publicId);
+
+		const contact: ConnectedContactList = {
+			userId: user.publicId,
+			name: user.name,
+			email: user.email,
+			image: user.image,
+			phone: user.phone,
+			connectedAt: user.createdAt,
+		};
+
+		return createApiResponse(HttpStatus.OK, 'Contact fetched successfully', contact);
 	}
 
 	@UseGuards(JwtAuthGuard)

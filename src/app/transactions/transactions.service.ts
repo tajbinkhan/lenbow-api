@@ -85,7 +85,7 @@ export class TransactionsService extends DrizzleService {
 
 		/**
 		 * Extended search:
-		 * - Match "other user" in the contact relationship (name/email/publicId), excluding myself
+		 * - Match "other user" in the transaction (borrower OR lender), excluding myself
 		 * - Match transaction fields (description/publicId/amount/amountPaid)
 		 *
 		 * NOTE: We use casts for UUID/decimal fields so Postgres can ILIKE them.
@@ -93,29 +93,37 @@ export class TransactionsService extends DrizzleService {
 		const searchExists =
 			filter.search && q
 				? or(
-						// Match "other user" in the contact relationship
+						// Search borrower (when current user is lender)
 						exists(
 							this.getDb()
 								.select({ id: schema.users.id })
 								.from(schema.users)
-								.innerJoin(
-									schema.contacts,
-									or(
-										eq(schema.contacts.connectedUserId, schema.users.id),
-										eq(schema.contacts.requestedUserId, schema.users.id),
-									),
-								)
 								.where(
 									and(
-										// correlate subquery to outer transactions row
-										eq(schema.contacts.id, schema.transactions.lenderId),
+										eq(schema.users.id, schema.transactions.borrowerId),
+										ne(schema.users.id, currentUserId),
 										or(
 											ilike(schema.users.name, q),
 											ilike(schema.users.email, q),
-											ilike(userPublicIdText, q), // ✅ uuid -> text
+											ilike(userPublicIdText, q),
 										),
-										// exclude myself
+									),
+								),
+						),
+						// Search lender (when current user is borrower)
+						exists(
+							this.getDb()
+								.select({ id: schema.users.id })
+								.from(schema.users)
+								.where(
+									and(
+										eq(schema.users.id, schema.transactions.lenderId),
 										ne(schema.users.id, currentUserId),
+										or(
+											ilike(schema.users.name, q),
+											ilike(schema.users.email, q),
+											ilike(userPublicIdText, q),
+										),
 									),
 								),
 						),
@@ -277,7 +285,7 @@ export class TransactionsService extends DrizzleService {
 
 		/**
 		 * Extended search:
-		 * - Match "other user" in the contact relationship (name/email/publicId), excluding myself
+		 * - Match "other user" in the transaction (borrower OR lender), excluding myself
 		 * - Match transaction fields (description/publicId/amount/amountPaid)
 		 *
 		 * NOTE: We use casts for UUID/decimal fields so Postgres can ILIKE them.
@@ -285,29 +293,37 @@ export class TransactionsService extends DrizzleService {
 		const searchExists =
 			filter.search && q
 				? or(
-						// Match "other user" in the contact relationship
+						// Search borrower (when current user is lender)
 						exists(
 							this.getDb()
 								.select({ id: schema.users.id })
 								.from(schema.users)
-								.innerJoin(
-									schema.contacts,
-									or(
-										eq(schema.contacts.connectedUserId, schema.users.id),
-										eq(schema.contacts.requestedUserId, schema.users.id),
-									),
-								)
 								.where(
 									and(
-										// correlate subquery to outer transactions row
-										eq(schema.contacts.id, schema.transactions.lenderId),
+										eq(schema.users.id, schema.transactions.borrowerId),
+										ne(schema.users.id, currentUserId),
 										or(
 											ilike(schema.users.name, q),
 											ilike(schema.users.email, q),
-											ilike(userPublicIdText, q), // ✅ uuid -> text
+											ilike(userPublicIdText, q),
 										),
-										// exclude myself
+									),
+								),
+						),
+						// Search lender (when current user is borrower)
+						exists(
+							this.getDb()
+								.select({ id: schema.users.id })
+								.from(schema.users)
+								.where(
+									and(
+										eq(schema.users.id, schema.transactions.lenderId),
 										ne(schema.users.id, currentUserId),
+										or(
+											ilike(schema.users.name, q),
+											ilike(schema.users.email, q),
+											ilike(userPublicIdText, q),
+										),
 									),
 								),
 						),
@@ -622,10 +638,7 @@ export class TransactionsService extends DrizzleService {
 		return getOrCreateContact;
 	}
 
-	async getConnectedContacts(
-		search: string,
-		currentUserId: number,
-	): Promise<ConnectedContactList[]> {
+	async getConnectedContacts(currentUserId: number): Promise<ConnectedContactList[]> {
 		const results = await this.getDb()
 			.select({
 				userId: schema.users.publicId,
@@ -650,7 +663,6 @@ export class TransactionsService extends DrizzleService {
 						eq(schema.contacts.requestedUserId, currentUserId),
 						eq(schema.contacts.connectedUserId, currentUserId),
 					),
-					or(ilike(schema.users.name, `%${search}%`), ilike(schema.users.email, `%${search}%`)),
 				),
 			)
 			.orderBy(desc(schema.contacts.createdAt));
