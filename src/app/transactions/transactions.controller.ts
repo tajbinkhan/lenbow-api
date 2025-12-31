@@ -26,6 +26,7 @@ import type {
 import {
 	transactionQuerySchema,
 	validateTransactionSchema,
+	validateUpdateTransactionSchema,
 	type TransactionQuerySchemaType,
 	type ValidateDeleteTransactionDto,
 	type ValidateTransactionDto,
@@ -213,10 +214,54 @@ export class TransactionsController {
 	}
 
 	@UseGuards(JwtAuthGuard)
+	@Put(':publicId/update-pending')
+	async updateTransaction(
+		@Param('publicId', ParseUUIDPipe) publicId: string,
+		@Req() req: Request,
+		@Body() body: ValidateUpdateTransactionDto,
+	): Promise<ApiResponse<TransactionReturnType>> {
+		const user = req.user;
+
+		// Validate incoming status
+		const validate = validateUpdateTransactionSchema.safeParse(body);
+		if (!validate.success) {
+			throw new BadRequestException(
+				`Validation failed: ${validate.error.issues.map(issue => issue.message).join(', ')}`,
+			);
+		}
+
+		// Fetch the transaction by its public ID
+		const transaction = await this.transactionsService.getTransactionByPublicId(publicId);
+
+		if (transaction.borrowerId !== user?.id)
+			throw new BadRequestException(`Only borrower can update the transaction details.`);
+
+		if (transaction.status !== 'pending')
+			throw new BadRequestException(`Only pending transactions can be updated.`);
+
+		// Update the transaction status
+		const updatedTransaction = await this.transactionsService.updateTransaction(
+			transaction.id,
+			validate.data,
+		);
+
+		const responseTransaction: TransactionReturnType = {
+			...updatedTransaction,
+			id: updatedTransaction.publicId,
+		};
+
+		return createApiResponse(
+			HttpStatus.OK,
+			'Transaction status updated successfully',
+			responseTransaction,
+		);
+	}
+
+	@UseGuards(JwtAuthGuard)
 	@Put(':publicId/status')
 	async updateTransactionStatus(
 		@Param('publicId', ParseUUIDPipe) publicId: string,
-		@Body() statusDto: ValidateUpdateTransactionDto['status'],
+		@Body() statusDto: ValidateTransactionDto['status'],
 	): Promise<ApiResponse<TransactionReturnType>> {
 		// Validate incoming status
 		const validate = validateTransactionSchema.shape.status.safeParse(statusDto);
@@ -250,6 +295,31 @@ export class TransactionsController {
 		const responseTransaction: TransactionReturnType = {
 			...updatedTransaction,
 			id: updatedTransaction.publicId,
+		};
+
+		return createApiResponse(
+			HttpStatus.OK,
+			'Transaction status updated successfully',
+			responseTransaction,
+		);
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@Put(':publicId')
+	async getTransaction(
+		@Param('publicId', ParseUUIDPipe) publicId: string,
+		@Req() req: Request,
+	): Promise<ApiResponse<TransactionReturnType>> {
+		const user = req.user;
+		// Fetch the transaction by its public ID
+		const transaction = await this.transactionsService.getTransactionByPublicId(publicId);
+
+		if (transaction.borrowerId !== user?.id || transaction.lenderId !== user?.id)
+			throw new BadRequestException(`You are not authorized to view this transaction.`);
+
+		const responseTransaction: TransactionReturnType = {
+			...transaction,
+			id: transaction.publicId,
 		};
 
 		return createApiResponse(

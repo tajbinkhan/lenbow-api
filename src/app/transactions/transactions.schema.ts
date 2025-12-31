@@ -61,10 +61,9 @@ export const validateTransactionSchema = z.object({
 	rejectedAt: validateDate('Rejected At').optional(),
 });
 
-export const validateUpdateTransactionSchema = validateTransactionSchema.omit({
-	borrowerId: true,
-	lenderId: true,
-	type: true,
+export const validateUpdateTransactionSchema = z.object({
+	amount: validatePositiveNumber('Amount'),
+	dueDate: validateDate('Due Date').optional(),
 });
 
 export const validateDeleteTransactionSchema = z.object({
