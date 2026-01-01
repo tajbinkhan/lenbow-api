@@ -65,6 +65,10 @@ export const validateUpdateTransactionSchema = z.object({
 	dueDate: validateDate('Due Date').optional(),
 });
 
+export const validateRejectTransactionSchema = z.object({
+	rejectionReason: validateString('Rejection Reason').optional(),
+});
+
 export const validateDeleteTransactionSchema = z.object({
 	transactionIds: validateArray('Transaction IDs', validateUUID('Transaction ID')),
 });
@@ -72,4 +76,5 @@ export const validateDeleteTransactionSchema = z.object({
 export type TransactionQuerySchemaType = z.infer<typeof transactionQuerySchema>;
 export type ValidateTransactionDto = z.infer<typeof validateTransactionSchema>;
 export type ValidateUpdateTransactionDto = z.infer<typeof validateUpdateTransactionSchema>;
+export type ValidateRejectTransactionDto = z.infer<typeof validateRejectTransactionSchema>;
 export type ValidateDeleteTransactionDto = z.infer<typeof validateDeleteTransactionSchema>;

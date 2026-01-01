@@ -24,6 +24,16 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
 		});
 	}
 
+	// 👇 Adds query params to Google authorization URL
+	authorizationParams(): Record<string, string> {
+		return {
+			prompt: 'select_account', // show account chooser
+			// optionally:
+			// access_type: 'offline', // if you want refresh tokens (usually with prompt: 'consent')
+			// include_granted_scopes: 'true',
+		};
+	}
+
 	validate(accessToken: string, refreshToken: string, profile: Profile): GoogleProfile {
 		const { id, emails, photos, displayName } = profile;
 

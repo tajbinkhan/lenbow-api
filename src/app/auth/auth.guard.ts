@@ -1,6 +1,6 @@
 import { ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {}
@@ -23,20 +23,45 @@ export class GoogleAuthGuard extends AuthGuard('google') {
 		err: Error | null,
 		user: TUser | false,
 		info: Error | undefined,
+		context: ExecutionContext,
 	): TUser {
+		const request = context.switchToHttp().getRequest<Request>();
+		const response = context.switchToHttp().getResponse<Response>();
+
 		// Handle OAuth errors with descriptive messages
 		if (err) {
 			const errorMessage = this.getOAuthErrorMessage(err);
 			throw new UnauthorizedException(errorMessage);
 		}
 
-		if (!user) {
+		if (!user || err) {
+			const redirectUrl = this.getRedirectFromState(request);
+
+			if (redirectUrl) {
+				response.redirect(`${redirectUrl}?error=access_denied`);
+				return {} as TUser;
+			}
+
 			throw new UnauthorizedException(
 				info?.message || 'Google authentication failed. Please try again.',
 			);
 		}
 
 		return user;
+	}
+
+	private getRedirectFromState(request: Request): string | null {
+		const state = request.query?.state as string | undefined;
+		if (!state) return null;
+
+		try {
+			const decoded = JSON.parse(Buffer.from(state, 'base64').toString('utf-8')) as {
+				redirect?: string;
+			};
+			return decoded.redirect ?? null;
+		} catch {
+			return null;
+		}
 	}
 
 	private getOAuthErrorMessage(err: Error & { code?: string }): string {

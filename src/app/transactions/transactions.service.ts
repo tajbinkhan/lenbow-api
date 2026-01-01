@@ -360,7 +360,7 @@ export class TransactionsService extends DrizzleService {
 						eq(schema.transactions.lenderId, currentUserId),
 					),
 			searchExists,
-			filter.status ? inArray(schema.transactions.status, filter.status) : undefined,
+			eq(schema.transactions.status, 'pending'),
 			fromDate ? gte(schema.transactions.createdAt, fromDate) : undefined,
 			toDate ? lte(schema.transactions.createdAt, toDate) : undefined,
 		].filter(Boolean);
@@ -588,10 +588,17 @@ export class TransactionsService extends DrizzleService {
 	async updateTransactionStatus(
 		id: number,
 		status: TransactionStatusEnum,
+		rejectionReason?: string,
 	): Promise<TransactionSchemaType> {
 		const updatedTransaction = await this.getDb()
 			.update(schema.transactions)
-			.set({ status })
+			.set({
+				status,
+				rejectionReason: rejectionReason ?? null,
+				acceptedAt: status === 'accepted' ? new Date() : null,
+				completedAt: status === 'completed' ? new Date() : null,
+				rejectedAt: status === 'rejected' ? new Date() : null,
+			})
 			.where(eq(schema.transactions.id, id))
 			.returning()
 			.then(res => res[0]);
