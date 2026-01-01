@@ -266,9 +266,7 @@ export class TransactionsController {
 		// Fetch the transaction by its public ID
 		const transaction = await this.transactionsService.getTransactionByPublicId(publicId);
 
-		console.log(transaction.borrowerId, transaction.lenderId, user?.id);
-
-		if (transaction.borrowerId !== user?.id || transaction.lenderId !== user?.id)
+		if (transaction.borrowerId !== user?.id && transaction.lenderId !== user?.id)
 			throw new BadRequestException(`You are not authorized to view this transaction.`);
 
 		const responseTransaction: TransactionReturnType = {
