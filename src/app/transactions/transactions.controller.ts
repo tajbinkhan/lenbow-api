@@ -21,11 +21,14 @@ import { ContactsService } from '../contacts/contacts.service';
 import type { TransactionListReturnType, TransactionReturnType } from './@types/transactions.types';
 import {
 	transactionQuerySchema,
+	validatePartialRepaySchema,
 	validateRejectTransactionSchema,
 	validateTransactionSchema,
 	validateUpdateTransactionSchema,
 	type TransactionQuerySchemaType,
+	type ValidateCompleteRepayDto,
 	type ValidateDeleteTransactionDto,
+	type ValidatePartialRepayDto,
 	type ValidateRejectTransactionDto,
 	type ValidateTransactionDto,
 	type ValidateUpdateTransactionDto,
@@ -117,10 +120,14 @@ export class TransactionsController {
 	@Delete('')
 	async deleteTransaction(
 		@Body() body: ValidateDeleteTransactionDto,
+		@Req() req: Request,
 	): Promise<ApiResponse<string | null>> {
+		const user = req.user;
+
 		// Fetch the transaction by its public ID
 		const transactions = await this.transactionsService.getTransactionsByPublicIds(
 			body.transactionIds,
+			user!.id,
 		);
 
 		const { ineligibleTransactions, eligibleTransactions } =
@@ -164,6 +171,79 @@ export class TransactionsController {
 			'Transaction list fetched successfully',
 			transactions.data,
 			transactions.pagination,
+		);
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@Put('/borrow/complete-repay')
+	async completeRepayTransaction(
+		@Body() body: ValidateCompleteRepayDto,
+		@Req() req: Request,
+	): Promise<ApiResponse<string | null>> {
+		const user = req.user;
+
+		// Fetch the transaction by its public ID
+		const transactions = await this.transactionsService.getTransactionsByPublicIds(
+			body.transactionIds,
+			user!.id,
+		);
+
+		const { ineligibleTransactions, eligibleTransactions } =
+			this.transactionsService.checkEligibilityForCompletingRepay(transactions);
+
+		const ineligibleTransactionsNumber = ineligibleTransactions.length;
+
+		await this.transactionsService.completeRepayTransaction(eligibleTransactions.map(t => t));
+
+		return createApiResponse(
+			HttpStatus.OK,
+			'Transaction repay completed successfully',
+			ineligibleTransactionsNumber > 0
+				? `${ineligibleTransactionsNumber} transactions were not completed as they are not eligible for repay completion.`
+				: null,
+		);
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@Put(':publicId/borrow/partial-repay')
+	async partialRepayTransaction(
+		@Param('publicId', ParseUUIDPipe) publicId: string,
+		@Body() body: ValidatePartialRepayDto,
+		@Req() req: Request,
+	): Promise<ApiResponse<string | null>> {
+		const user = req.user;
+
+		const validate = validatePartialRepaySchema.safeParse(body);
+		if (!validate.success) {
+			throw new BadRequestException(
+				`Validation failed: ${validate.error.issues.map(issue => issue.message).join(', ')}`,
+			);
+		}
+
+		// Fetch the transaction by its public ID
+		const transaction = await this.transactionsService.getTransactionByPublicId(publicId);
+
+		if (transaction.borrowerId !== user?.id) {
+			throw new BadRequestException(`Only borrower can repay the transaction.`);
+		}
+
+		const eligibility = this.transactionsService.checkEligibilityForPartialRepay(
+			transaction,
+			validate.data.amount,
+		);
+
+		if (!eligibility.eligible && eligibility.reason) {
+			throw new BadRequestException(
+				`Transaction not eligible for partial repay: ${eligibility.reason}`,
+			);
+		}
+
+		await this.transactionsService.partialRepayTransaction(transaction, validate.data.amount);
+
+		return createApiResponse(
+			HttpStatus.OK,
+			'Transaction partial repay completed successfully',
+			null,
 		);
 	}
 
@@ -296,7 +376,10 @@ export class TransactionsController {
 	async updateTransactionStatus(
 		@Param('publicId', ParseUUIDPipe) publicId: string,
 		@Body() statusDto: ValidateTransactionDto['status'],
+		@Req() req: Request,
 	): Promise<ApiResponse<TransactionReturnType>> {
+		const user = req.user;
+
 		// Validate incoming status
 		const validate = validateTransactionSchema.shape.status.safeParse(statusDto);
 		if (!validate.success) {
@@ -307,6 +390,10 @@ export class TransactionsController {
 
 		// Fetch the transaction by its public ID
 		const transaction = await this.transactionsService.getTransactionByPublicId(publicId);
+
+		if (transaction.borrowerId !== user?.id && transaction.lenderId !== user?.id) {
+			throw new BadRequestException(`You are not authorized to update the transaction status.`);
+		}
 
 		// Check eligibility for status update
 		const eligibility = this.transactionsService.checkEligibilityForUpdatingStatus(

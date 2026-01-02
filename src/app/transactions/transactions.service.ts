@@ -50,9 +50,11 @@ export class TransactionsService extends DrizzleService {
 	async createTransaction(
 		data: Omit<ValidateTransactionDto, 'type'>,
 	): Promise<TransactionSchemaType> {
+		const modifiedData = { ...data, remainingAmount: data.amount };
+
 		const newTransaction = await this.getDb()
 			.insert(schema.transactions)
-			.values(data)
+			.values(modifiedData)
 			.returning()
 			.then(res => res[0]);
 
@@ -500,9 +502,15 @@ export class TransactionsService extends DrizzleService {
 		return transaction;
 	}
 
-	async getTransactionsByPublicIds(publicIds: string[]): Promise<TransactionSchemaType[]> {
+	async getTransactionsByPublicIds(
+		publicIds: string[],
+		currentUserId: number,
+	): Promise<TransactionSchemaType[]> {
 		const transactions = await this.getDb().query.transactions.findMany({
-			where: inArray(schema.transactions.publicId, publicIds),
+			where: and(
+				inArray(schema.transactions.publicId, publicIds),
+				eq(schema.transactions.borrowerId, currentUserId),
+			),
 		});
 
 		return transactions;
@@ -585,6 +593,46 @@ export class TransactionsService extends DrizzleService {
 		return { ineligibleTransactions, eligibleTransactions };
 	}
 
+	checkEligibilityForCompletingRepay(
+		data: TransactionSchemaType[],
+	): TransactionEligibilityForDeletion {
+		const ineligibleTransactions: number[] = [];
+		const eligibleTransactions: number[] = [];
+
+		data.forEach(transaction => {
+			const currentStatus = transaction.status;
+			// Only accepted or partially_paid transactions can be completed
+			if (currentStatus !== 'accepted' && currentStatus !== 'partially_paid') {
+				ineligibleTransactions.push(transaction.id);
+			} else {
+				eligibleTransactions.push(transaction.id);
+			}
+		});
+
+		return { ineligibleTransactions, eligibleTransactions };
+	}
+
+	checkEligibilityForPartialRepay(
+		data: TransactionSchemaType,
+		amount: number,
+	): { eligible: boolean; reason?: string } {
+		const currentStatus = data.status;
+
+		if (currentStatus === 'completed') {
+			return { eligible: false, reason: 'Transaction is already completed' };
+		} else if (currentStatus === 'rejected') {
+			return { eligible: false, reason: 'Cannot repay a rejected transaction' };
+		} else if (currentStatus === 'pending') {
+			return { eligible: false, reason: 'Cannot repay a pending transaction' };
+		} else if (data.remainingAmount < amount) {
+			return { eligible: false, reason: 'Repay amount exceeds remaining amount' };
+		} else if (amount <= 0) {
+			return { eligible: false, reason: 'Repay amount must be greater than zero' };
+		}
+
+		return { eligible: true };
+	}
+
 	async updateTransactionStatus(
 		id: number,
 		status: TransactionStatusEnum,
@@ -608,5 +656,49 @@ export class TransactionsService extends DrizzleService {
 	async deleteTransaction(ids: number[]): Promise<string> {
 		await this.getDb().delete(schema.transactions).where(inArray(schema.transactions.id, ids));
 		return 'Transaction deleted successfully';
+	}
+
+	async completeRepayTransaction(ids: number[]): Promise<TransactionSchemaType[]> {
+		const updatedTransactions = await this.getDb()
+			.update(schema.transactions)
+			.set({
+				status: 'completed',
+				amountPaid: schema.transactions.amount,
+				remainingAmount: 0,
+				completedAt: new Date(),
+			})
+			.where(inArray(schema.transactions.id, ids))
+			.returning();
+
+		return updatedTransactions;
+	}
+
+	async partialRepayTransaction(
+		data: TransactionSchemaType,
+		amount: number,
+	): Promise<TransactionSchemaType> {
+		// Calculate new amounts
+		const newAmountPaid = data.amountPaid + amount;
+		const newRemainingAmount = data.amount - newAmountPaid;
+		// Determine new status
+		let newStatus: TransactionStatusEnum = 'partially_paid';
+		if (newRemainingAmount <= 0) {
+			newStatus = 'completed';
+		}
+
+		// Update the transaction
+		const updatedTransaction = await this.getDb()
+			.update(schema.transactions)
+			.set({
+				amountPaid: newAmountPaid,
+				remainingAmount: newRemainingAmount,
+				status: newStatus,
+				completedAt: newStatus === 'completed' ? new Date() : null,
+			})
+			.where(eq(schema.transactions.id, data.id))
+			.returning()
+			.then(res => res[0]);
+
+		return updatedTransaction;
 	}
 }

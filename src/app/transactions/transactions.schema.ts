@@ -73,8 +73,16 @@ export const validateDeleteTransactionSchema = z.object({
 	transactionIds: validateArray('Transaction IDs', validateUUID('Transaction ID')),
 });
 
+export const validateCompleteRepaySchema = validateDeleteTransactionSchema;
+
+export const validatePartialRepaySchema = z.object({
+	amount: validatePositiveNumber('Amount'),
+});
+
 export type TransactionQuerySchemaType = z.infer<typeof transactionQuerySchema>;
 export type ValidateTransactionDto = z.infer<typeof validateTransactionSchema>;
 export type ValidateUpdateTransactionDto = z.infer<typeof validateUpdateTransactionSchema>;
 export type ValidateRejectTransactionDto = z.infer<typeof validateRejectTransactionSchema>;
 export type ValidateDeleteTransactionDto = z.infer<typeof validateDeleteTransactionSchema>;
+export type ValidateCompleteRepayDto = z.infer<typeof validateCompleteRepaySchema>;
+export type ValidatePartialRepayDto = z.infer<typeof validatePartialRepaySchema>;
