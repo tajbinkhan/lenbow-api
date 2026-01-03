@@ -22,15 +22,15 @@ import type { TransactionListReturnType, TransactionReturnType } from './@types/
 import {
 	transactionQuerySchema,
 	validatePartialRepaySchema,
-	validateRejectTransactionSchema,
 	validateTransactionSchema,
+	validateUpdateStatusTransactionSchema,
 	validateUpdateTransactionSchema,
 	type TransactionQuerySchemaType,
 	type ValidateCompleteRepayDto,
 	type ValidateDeleteTransactionDto,
 	type ValidatePartialRepayDto,
-	type ValidateRejectTransactionDto,
 	type ValidateTransactionDto,
+	type ValidateUpdateStatusTransactionDto,
 	type ValidateUpdateTransactionDto,
 } from './transactions.schema';
 import { TransactionsService } from './transactions.service';
@@ -175,7 +175,7 @@ export class TransactionsController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Put('/borrow/complete-repay')
+	@Put('/repayment/complete')
 	async completeRepayTransaction(
 		@Body() body: ValidateCompleteRepayDto,
 		@Req() req: Request,
@@ -205,7 +205,7 @@ export class TransactionsController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Put(':publicId/borrow/partial-repay')
+	@Put(':publicId/repayment/partial')
 	async partialRepayTransaction(
 		@Param('publicId', ParseUUIDPipe) publicId: string,
 		@Body() body: ValidatePartialRepayDto,
@@ -248,7 +248,7 @@ export class TransactionsController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Put(':publicId/update-pending')
+	@Put(':publicId/update')
 	async updateTransaction(
 		@Param('publicId', ParseUUIDPipe) publicId: string,
 		@Req() req: Request,
@@ -292,96 +292,16 @@ export class TransactionsController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Put(':publicId/approved')
-	async approveTransaction(
-		@Param('publicId', ParseUUIDPipe) publicId: string,
-		@Req() req: Request,
-	): Promise<ApiResponse<TransactionReturnType>> {
-		const user = req.user;
-
-		// Fetch the transaction by its public ID
-		const transaction = await this.transactionsService.getTransactionByPublicId(publicId);
-
-		if (transaction.lenderId !== user?.id)
-			throw new BadRequestException(`Only lender can approve the transaction.`);
-
-		if (transaction.status !== 'pending')
-			throw new BadRequestException(`Only pending transactions can be approved.`);
-
-		// Update the transaction status
-		const updatedTransaction = await this.transactionsService.updateTransactionStatus(
-			transaction.id,
-			'accepted',
-		);
-
-		const responseTransaction: TransactionReturnType = {
-			...updatedTransaction,
-			id: updatedTransaction.publicId,
-		};
-
-		return createApiResponse(
-			HttpStatus.OK,
-			'Transaction status updated successfully',
-			responseTransaction,
-		);
-	}
-
-	@UseGuards(JwtAuthGuard)
-	@Put(':publicId/rejected')
-	async rejectTransaction(
-		@Param('publicId', ParseUUIDPipe) publicId: string,
-		@Req() req: Request,
-		@Body() body: ValidateRejectTransactionDto,
-	): Promise<ApiResponse<TransactionReturnType>> {
-		const user = req.user;
-
-		// Validate incoming status
-		const validate = validateRejectTransactionSchema.safeParse(body);
-		if (!validate.success) {
-			throw new BadRequestException(
-				`Validation failed: ${validate.error.issues.map(issue => issue.message).join(', ')}`,
-			);
-		}
-
-		// Fetch the transaction by its public ID
-		const transaction = await this.transactionsService.getTransactionByPublicId(publicId);
-
-		if (transaction.lenderId !== user?.id)
-			throw new BadRequestException(`Only lender can reject the transaction.`);
-
-		if (transaction.status !== 'pending')
-			throw new BadRequestException(`Only pending transactions can be rejected.`);
-
-		// Update the transaction status
-		const updatedTransaction = await this.transactionsService.updateTransactionStatus(
-			transaction.id,
-			'rejected',
-			validate.data.rejectionReason,
-		);
-
-		const responseTransaction: TransactionReturnType = {
-			...updatedTransaction,
-			id: updatedTransaction.publicId,
-		};
-
-		return createApiResponse(
-			HttpStatus.OK,
-			'Transaction status updated successfully',
-			responseTransaction,
-		);
-	}
-
-	@UseGuards(JwtAuthGuard)
 	@Put(':publicId/status')
 	async updateTransactionStatus(
 		@Param('publicId', ParseUUIDPipe) publicId: string,
-		@Body() statusDto: ValidateTransactionDto['status'],
+		@Body() statusDto: ValidateUpdateStatusTransactionDto,
 		@Req() req: Request,
 	): Promise<ApiResponse<TransactionReturnType>> {
 		const user = req.user;
 
 		// Validate incoming status
-		const validate = validateTransactionSchema.shape.status.safeParse(statusDto);
+		const validate = validateUpdateStatusTransactionSchema.safeParse(statusDto);
 		if (!validate.success) {
 			throw new BadRequestException(
 				`Validation failed: ${validate.error.issues.map(issue => issue.message).join(', ')}`,
@@ -390,27 +310,32 @@ export class TransactionsController {
 
 		// Fetch the transaction by its public ID
 		const transaction = await this.transactionsService.getTransactionByPublicId(publicId);
-
-		if (transaction.borrowerId !== user?.id && transaction.lenderId !== user?.id) {
-			throw new BadRequestException(`You are not authorized to update the transaction status.`);
-		}
 
 		// Check eligibility for status update
 		const eligibility = this.transactionsService.checkEligibilityForUpdatingStatus(
 			transaction,
-			validate.data,
+			validate.data.status,
 		);
 
 		if (!eligibility) {
 			throw new BadRequestException(
-				`Status update not allowed from ${transaction.status} to ${validate.data}`,
+				`Status update not allowed from ${transaction.status} to ${validate.data.status}`,
 			);
 		}
+
+		if (
+			(validate.data.status === 'accepted' || validate.data.status === 'rejected') &&
+			transaction.lenderId !== user?.id
+		)
+			throw new BadRequestException(`Only lender can accept the transaction.`);
 
 		// Update the transaction status
 		const updatedTransaction = await this.transactionsService.updateTransactionStatus(
 			transaction.id,
-			validate.data,
+			validate.data.status,
+			validate.data.status === 'rejected' && 'rejectionReason' in statusDto
+				? statusDto.rejectionReason
+				: undefined,
 		);
 
 		const responseTransaction: TransactionReturnType = {
