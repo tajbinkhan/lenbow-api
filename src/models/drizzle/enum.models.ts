@@ -7,5 +7,6 @@ export const transactionStatusEnum = pgEnum('transaction_status', [
 	'accepted',
 	'rejected',
 	'partially_paid',
+	'requested_repay',
 	'completed',
 ]);

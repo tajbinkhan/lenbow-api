@@ -30,6 +30,7 @@ export interface TransactionListReturnType {
 	amount: number;
 	amountPaid: number;
 	remainingAmount: number;
+	reviewAmount: number | null;
 	rejectionReason: string | null;
 	requestDate: Date | null;
 	acceptedAt: Date | null;

@@ -64,12 +64,24 @@ const updateRejectedTransactionSchema = z.object({
 	rejectionReason: validateString('Rejection Reason').optional(),
 });
 
+const updateRequestedRepayTransactionSchema = z.object({
+	reviewAmount: validatePositiveNumber('Review Amount'),
+});
+
 export const validateUpdateStatusTransactionSchema = z.discriminatedUnion('status', [
 	updateRejectedTransactionSchema.extend({
 		status: z.literal('rejected'),
 	}),
+	updateRequestedRepayTransactionSchema.extend({
+		status: z.literal('requested_repay'),
+	}),
 	z.object({
-		status: validateEnum('Transaction Status', ['pending', 'accepted', 'completed']),
+		status: validateEnum('Transaction Status', [
+			'pending',
+			'accepted',
+			'partially_paid',
+			'completed',
+		]),
 	}),
 ]);
 
@@ -82,12 +94,6 @@ export const validateDeleteTransactionSchema = z.object({
 	transactionIds: validateArray('Transaction IDs', validateUUID('Transaction ID')),
 });
 
-export const validateCompleteRepaySchema = validateDeleteTransactionSchema;
-
-export const validatePartialRepaySchema = z.object({
-	amount: validatePositiveNumber('Amount'),
-});
-
 export type TransactionQuerySchemaType = z.infer<typeof transactionQuerySchema>;
 export type ValidateTransactionDto = z.infer<typeof validateTransactionSchema>;
 export type ValidateUpdateStatusTransactionDto = z.infer<
@@ -95,5 +101,3 @@ export type ValidateUpdateStatusTransactionDto = z.infer<
 >;
 export type ValidateUpdateTransactionDto = z.infer<typeof validateUpdateTransactionSchema>;
 export type ValidateDeleteTransactionDto = z.infer<typeof validateDeleteTransactionSchema>;
-export type ValidateCompleteRepayDto = z.infer<typeof validateCompleteRepaySchema>;
-export type ValidatePartialRepayDto = z.infer<typeof validatePartialRepaySchema>;

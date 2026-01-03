@@ -200,6 +200,7 @@ export class TransactionsService extends DrizzleService {
 				amount: schema.transactions.amount,
 				amountPaid: schema.transactions.amountPaid,
 				remainingAmount: schema.transactions.remainingAmount,
+				reviewAmount: schema.transactions.reviewAmount,
 				status: schema.transactions.status,
 				description: schema.transactions.description,
 				rejectionReason: schema.transactions.rejectionReason,
@@ -421,6 +422,7 @@ export class TransactionsService extends DrizzleService {
 				amount: schema.transactions.amount,
 				amountPaid: schema.transactions.amountPaid,
 				remainingAmount: schema.transactions.remainingAmount,
+				reviewAmount: schema.transactions.reviewAmount,
 				status: schema.transactions.status,
 				description: schema.transactions.description,
 				rejectionReason: schema.transactions.rejectionReason,
@@ -529,19 +531,6 @@ export class TransactionsService extends DrizzleService {
 		return updatedTransaction;
 	}
 
-	async updateTransactionPaidAmount(
-		id: number,
-		amountPaid: number,
-	): Promise<TransactionSchemaType> {
-		const updatedTransaction = await this.getDb()
-			.update(schema.transactions)
-			.set({ amountPaid })
-			.where(eq(schema.transactions.id, id))
-			.returning()
-			.then(res => res[0]);
-		return updatedTransaction;
-	}
-
 	checkEligibilityForUpdatingStatus(
 		data: TransactionSchemaType,
 		status: TransactionStatusEnum,
@@ -570,10 +559,28 @@ export class TransactionsService extends DrizzleService {
 
 		// If status is partially_paid, it can only be changed to completed
 		if (currentStatus === 'partially_paid') {
-			return status === 'completed';
+			return status === 'completed' || status === 'requested_repay';
+		}
+
+		// If status is requested_repay, it can be changed to completed or partially_paid
+		if (currentStatus === 'requested_repay') {
+			return status === 'completed' || status === 'partially_paid';
 		}
 
 		return false;
+	}
+
+	checkEligibilityForReviewAmount(
+		data: TransactionSchemaType,
+		reviewAmount: number,
+	): { eligible: boolean; reason?: string } {
+		if (reviewAmount <= 0) {
+			return { eligible: false, reason: 'Review amount must be greater than zero' };
+		} else if (reviewAmount > data.remainingAmount) {
+			return { eligible: false, reason: 'Review amount exceeds remaining amount' };
+		}
+
+		return { eligible: true };
 	}
 
 	checkEligibilityForDeleting(data: TransactionSchemaType[]): TransactionEligibilityForDeletion {
@@ -593,59 +600,79 @@ export class TransactionsService extends DrizzleService {
 		return { ineligibleTransactions, eligibleTransactions };
 	}
 
-	checkEligibilityForCompletingRepay(
-		data: TransactionSchemaType[],
-	): TransactionEligibilityForDeletion {
-		const ineligibleTransactions: number[] = [];
-		const eligibleTransactions: number[] = [];
-
-		data.forEach(transaction => {
-			const currentStatus = transaction.status;
-			// Only accepted or partially_paid transactions can be completed
-			if (currentStatus !== 'accepted' && currentStatus !== 'partially_paid') {
-				ineligibleTransactions.push(transaction.id);
-			} else {
-				eligibleTransactions.push(transaction.id);
-			}
-		});
-
-		return { ineligibleTransactions, eligibleTransactions };
+	calculateReviewAmount(status: TransactionStatusEnum, amount: number): number {
+		if (status === 'requested_repay') {
+			return amount;
+		} else if (status === 'partially_paid' || status === 'completed') {
+			return 0;
+		}
+		return 0;
 	}
 
-	checkEligibilityForPartialRepay(
-		data: TransactionSchemaType,
-		amount: number,
-	): { eligible: boolean; reason?: string } {
-		const currentStatus = data.status;
-
-		if (currentStatus === 'completed') {
-			return { eligible: false, reason: 'Transaction is already completed' };
-		} else if (currentStatus === 'rejected') {
-			return { eligible: false, reason: 'Cannot repay a rejected transaction' };
-		} else if (currentStatus === 'pending') {
-			return { eligible: false, reason: 'Cannot repay a pending transaction' };
-		} else if (data.remainingAmount < amount) {
-			return { eligible: false, reason: 'Repay amount exceeds remaining amount' };
-		} else if (amount <= 0) {
-			return { eligible: false, reason: 'Repay amount must be greater than zero' };
+	calculateRemainingAmount(
+		currentRemainingAmount: number,
+		reviewAmount: number,
+		status: TransactionStatusEnum,
+	): number {
+		if (status === 'requested_repay') {
+			return currentRemainingAmount;
+		} else if (status === 'partially_paid' || status === 'completed') {
+			return currentRemainingAmount - reviewAmount;
 		}
+		return currentRemainingAmount;
+	}
 
-		return { eligible: true };
+	calculateAmountPaid(
+		currentAmountPaid: number,
+		reviewAmount: number,
+		status: TransactionStatusEnum,
+	): number {
+		if (status === 'requested_repay') {
+			return currentAmountPaid;
+		} else if (status === 'partially_paid' || status === 'completed') {
+			return currentAmountPaid + reviewAmount;
+		}
+		return currentAmountPaid;
+	}
+
+	defineTransactionStatusAfterAccepting(
+		remainingAmount: number,
+		reviewAmount: number,
+	): TransactionStatusEnum {
+		console.log(`Remaining Amount: ${remainingAmount}, Review Amount: ${reviewAmount}`);
+		// If reviewAmount equals remainingAmount, status is completed
+		if (reviewAmount === remainingAmount) {
+			return 'completed';
+		}
+		// If reviewAmount is less than remainingAmount, status is partially_paid
+		else if (reviewAmount !== remainingAmount) {
+			return 'partially_paid';
+		}
+		// Default to accepted
+		return 'accepted';
 	}
 
 	async updateTransactionStatus(
 		id: number,
 		status: TransactionStatusEnum,
-		rejectionReason?: string,
+		objects: {
+			remainingAmount?: number;
+			amountPaid?: number;
+			rejectionReason?: string;
+			reviewAmount?: number;
+		},
 	): Promise<TransactionSchemaType> {
 		const updatedTransaction = await this.getDb()
 			.update(schema.transactions)
 			.set({
 				status,
-				rejectionReason: rejectionReason ?? null,
+				rejectionReason: objects.rejectionReason,
 				acceptedAt: status === 'accepted' ? new Date() : null,
 				completedAt: status === 'completed' ? new Date() : null,
 				rejectedAt: status === 'rejected' ? new Date() : null,
+				reviewAmount: objects.reviewAmount,
+				remainingAmount: objects.remainingAmount,
+				amountPaid: objects.amountPaid,
 			})
 			.where(eq(schema.transactions.id, id))
 			.returning()

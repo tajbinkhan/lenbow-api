@@ -21,14 +21,11 @@ import { ContactsService } from '../contacts/contacts.service';
 import type { TransactionListReturnType, TransactionReturnType } from './@types/transactions.types';
 import {
 	transactionQuerySchema,
-	validatePartialRepaySchema,
 	validateTransactionSchema,
 	validateUpdateStatusTransactionSchema,
 	validateUpdateTransactionSchema,
 	type TransactionQuerySchemaType,
-	type ValidateCompleteRepayDto,
 	type ValidateDeleteTransactionDto,
-	type ValidatePartialRepayDto,
 	type ValidateTransactionDto,
 	type ValidateUpdateStatusTransactionDto,
 	type ValidateUpdateTransactionDto,
@@ -175,79 +172,6 @@ export class TransactionsController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Put('/repayment/complete')
-	async completeRepayTransaction(
-		@Body() body: ValidateCompleteRepayDto,
-		@Req() req: Request,
-	): Promise<ApiResponse<string | null>> {
-		const user = req.user;
-
-		// Fetch the transaction by its public ID
-		const transactions = await this.transactionsService.getTransactionsByPublicIds(
-			body.transactionIds,
-			user!.id,
-		);
-
-		const { ineligibleTransactions, eligibleTransactions } =
-			this.transactionsService.checkEligibilityForCompletingRepay(transactions);
-
-		const ineligibleTransactionsNumber = ineligibleTransactions.length;
-
-		await this.transactionsService.completeRepayTransaction(eligibleTransactions.map(t => t));
-
-		return createApiResponse(
-			HttpStatus.OK,
-			'Transaction repay completed successfully',
-			ineligibleTransactionsNumber > 0
-				? `${ineligibleTransactionsNumber} transactions were not completed as they are not eligible for repay completion.`
-				: null,
-		);
-	}
-
-	@UseGuards(JwtAuthGuard)
-	@Put(':publicId/repayment/partial')
-	async partialRepayTransaction(
-		@Param('publicId', ParseUUIDPipe) publicId: string,
-		@Body() body: ValidatePartialRepayDto,
-		@Req() req: Request,
-	): Promise<ApiResponse<string | null>> {
-		const user = req.user;
-
-		const validate = validatePartialRepaySchema.safeParse(body);
-		if (!validate.success) {
-			throw new BadRequestException(
-				`Validation failed: ${validate.error.issues.map(issue => issue.message).join(', ')}`,
-			);
-		}
-
-		// Fetch the transaction by its public ID
-		const transaction = await this.transactionsService.getTransactionByPublicId(publicId);
-
-		if (transaction.borrowerId !== user?.id) {
-			throw new BadRequestException(`Only borrower can repay the transaction.`);
-		}
-
-		const eligibility = this.transactionsService.checkEligibilityForPartialRepay(
-			transaction,
-			validate.data.amount,
-		);
-
-		if (!eligibility.eligible && eligibility.reason) {
-			throw new BadRequestException(
-				`Transaction not eligible for partial repay: ${eligibility.reason}`,
-			);
-		}
-
-		await this.transactionsService.partialRepayTransaction(transaction, validate.data.amount);
-
-		return createApiResponse(
-			HttpStatus.OK,
-			'Transaction partial repay completed successfully',
-			null,
-		);
-	}
-
-	@UseGuards(JwtAuthGuard)
 	@Put(':publicId/update')
 	async updateTransaction(
 		@Param('publicId', ParseUUIDPipe) publicId: string,
@@ -324,18 +248,52 @@ export class TransactionsController {
 		}
 
 		if (
-			(validate.data.status === 'accepted' || validate.data.status === 'rejected') &&
+			(validate.data.status === 'accepted' ||
+				validate.data.status === 'rejected' ||
+				validate.data.status === 'partially_paid' ||
+				validate.data.status === 'completed') &&
 			transaction.lenderId !== user?.id
 		)
-			throw new BadRequestException(`Only lender can accept the transaction.`);
+			throw new BadRequestException(`Only lender can update the transaction status.`);
+
+		if (validate.data.status === 'requested_repay' && transaction.borrowerId !== user?.id) {
+			const eligibility = this.transactionsService.checkEligibilityForReviewAmount(
+				transaction,
+				validate.data.reviewAmount,
+			);
+
+			if (!eligibility.eligible && eligibility.reason) {
+				throw new BadRequestException(
+					`Transaction not eligible for requesting repay: ${eligibility.reason}`,
+				);
+			}
+			throw new BadRequestException(`Only borrower can request repay for the transaction.`);
+		}
 
 		// Update the transaction status
 		const updatedTransaction = await this.transactionsService.updateTransactionStatus(
 			transaction.id,
 			validate.data.status,
-			validate.data.status === 'rejected' && 'rejectionReason' in statusDto
-				? statusDto.rejectionReason
-				: undefined,
+			{
+				rejectionReason:
+					validate.data.status === 'rejected' && 'rejectionReason' in statusDto
+						? statusDto.rejectionReason
+						: undefined,
+				reviewAmount: this.transactionsService.calculateReviewAmount(
+					validate.data.status,
+					'reviewAmount' in validate.data ? validate.data.reviewAmount : 0,
+				),
+				amountPaid: this.transactionsService.calculateAmountPaid(
+					transaction.amountPaid,
+					transaction.reviewAmount,
+					validate.data.status,
+				),
+				remainingAmount: this.transactionsService.calculateRemainingAmount(
+					transaction.remainingAmount,
+					transaction.reviewAmount,
+					validate.data.status,
+				),
+			},
 		);
 
 		const responseTransaction: TransactionReturnType = {
@@ -346,6 +304,100 @@ export class TransactionsController {
 		return createApiResponse(
 			HttpStatus.OK,
 			'Transaction status updated successfully',
+			responseTransaction,
+		);
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@Put(':publicId/repayment/accept')
+	async acceptTransaction(
+		@Param('publicId', ParseUUIDPipe) publicId: string,
+		@Req() req: Request,
+	): Promise<ApiResponse<TransactionReturnType>> {
+		const user = req.user;
+
+		// Fetch the transaction by its public ID
+		const transaction = await this.transactionsService.getTransactionByPublicId(publicId);
+
+		if (transaction.lenderId !== user?.id)
+			throw new BadRequestException(`Only lender can accept the transaction.`);
+
+		if (transaction.status !== 'requested_repay')
+			throw new BadRequestException(`Only requested repay transactions can be accepted.`);
+
+		const status = this.transactionsService.defineTransactionStatusAfterAccepting(
+			transaction.reviewAmount,
+			transaction.remainingAmount,
+		);
+
+		// Update the transaction status to accepted
+		const updatedTransaction = await this.transactionsService.updateTransactionStatus(
+			transaction.id,
+			status,
+			{
+				amountPaid: this.transactionsService.calculateAmountPaid(
+					transaction.amountPaid,
+					transaction.reviewAmount,
+					status,
+				),
+				remainingAmount: this.transactionsService.calculateRemainingAmount(
+					transaction.remainingAmount,
+					transaction.reviewAmount,
+					status,
+				),
+				reviewAmount: 0,
+			},
+		);
+
+		const responseTransaction: TransactionReturnType = {
+			...updatedTransaction,
+			id: updatedTransaction.publicId,
+		};
+
+		return createApiResponse(
+			HttpStatus.OK,
+			'Transaction accepted successfully',
+			responseTransaction,
+		);
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@Put(':publicId/repayment/reject')
+	async rejectTransaction(
+		@Param('publicId', ParseUUIDPipe) publicId: string,
+		@Req() req: Request,
+	): Promise<ApiResponse<TransactionReturnType>> {
+		const user = req.user;
+
+		// Fetch the transaction by its public ID
+		const transaction = await this.transactionsService.getTransactionByPublicId(publicId);
+
+		if (transaction.lenderId !== user?.id)
+			throw new BadRequestException(`Only lender can reject the transaction.`);
+
+		if (transaction.status !== 'requested_repay')
+			throw new BadRequestException(`Only requested repay transactions can be rejected.`);
+
+		const status =
+			transaction.remainingAmount === transaction.amount ? 'accepted' : 'partially_paid';
+
+		// Update the transaction status to rejected
+		const updatedTransaction = await this.transactionsService.updateTransactionStatus(
+			transaction.id,
+			status,
+			{
+				reviewAmount: 0,
+			},
+		);
+
+		const responseTransaction: TransactionReturnType = {
+			...updatedTransaction,
+			id: updatedTransaction.publicId,
+		};
+
+		return createApiResponse(
+			HttpStatus.OK,
+			'Transaction rejected successfully',
 			responseTransaction,
 		);
 	}

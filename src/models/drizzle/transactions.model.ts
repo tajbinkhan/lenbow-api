@@ -49,8 +49,8 @@ export const transactions = pgTable(
 			.references(() => users.id, { onDelete: 'cascade' }),
 		amount: decimal('amount', { precision: 10, scale: 2, mode: 'number' }).notNull(),
 		amountPaid: decimal('amount_paid', { precision: 10, scale: 2, mode: 'number' })
-			.default(0)
-			.notNull(),
+			.notNull()
+			.default(0),
 		remainingAmount: decimal('remaining_amount', {
 			precision: 10,
 			scale: 2,
@@ -58,6 +58,9 @@ export const transactions = pgTable(
 		})
 			.notNull()
 			.default(0), // amount - amountPaid
+		reviewAmount: decimal('review_amount', { precision: 10, scale: 2, mode: 'number' })
+			.notNull()
+			.default(0), // amount requested for review/repay
 		status: transactionStatusEnum('status').default('pending').notNull(),
 		description: text('description'),
 		rejectionReason: text('rejection_reason'), // If rejected, why?
