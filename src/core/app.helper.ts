@@ -114,7 +114,7 @@ export default class AppHelpers {
 				// For blacklisted domains, use strict with full domain name
 				const fullDomain = getDomainFromApiUrl();
 				return {
-					sameSite: 'strict',
+					sameSite: 'none',
 					secure: true,
 					domain: fullDomain,
 				};

@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { doubleCsrf } from 'csrf-csrf';
 import type { Request, Response } from 'express';
+import AppHelpers from '../core/app.helper';
+import { csrfTimeout } from '../core/constants';
 import { EnvType } from '../core/env';
 
 @Injectable()
@@ -17,15 +19,15 @@ export class CsrfService {
 			getSecret: () => secret,
 			getSessionIdentifier: () => secret,
 			cookieName: 'csrf-token',
-			// cookieOptions: {
-			// 	maxAge: csrfTimeout,
-			// 	sameSite: 'lax',
-			// 	secure: process.env.NODE_ENV === 'production',
-			// 	httpOnly: true,
-			// 	...(this.configService.get('COOKIE_DOMAIN') && {
-			// 		domain: this.configService.get('COOKIE_DOMAIN')
-			// 	})
-			// },
+			cookieOptions: {
+				maxAge: csrfTimeout,
+				sameSite: AppHelpers.sameSiteCookieConfig().sameSite,
+				secure: AppHelpers.sameSiteCookieConfig().secure,
+				httpOnly: true,
+				...(AppHelpers.sameSiteCookieConfig().domain && {
+					domain: AppHelpers.sameSiteCookieConfig().domain,
+				}),
+			},
 			size: 32,
 			errorConfig: {
 				message:
