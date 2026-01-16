@@ -52,9 +52,6 @@ pids
 *.seed
 *.pid.lock
 
-# Workspace Storage
-pnpm-workspace.yaml
-
 # Docker Volume Data
 pgdata/
 mongo-data/
