@@ -34,24 +34,43 @@ export class ContactsService extends DrizzleService {
 			throw new BadRequestException('You cannot request a loan or borrow from yourself');
 		}
 
-		const getOrCreateContact = await this.getDb()
+		// Check if contact exists in either direction
+		const existingContact = await this.getDb()
+			.select()
+			.from(schema.contacts)
+			.where(
+				or(
+					and(
+						eq(schema.contacts.connectedUserId, lender.id),
+						eq(schema.contacts.requestedUserId, borrowerId),
+					),
+					and(
+						eq(schema.contacts.connectedUserId, borrowerId),
+						eq(schema.contacts.requestedUserId, lender.id),
+					),
+				),
+			)
+			.limit(1)
+			.then(res => res[0]);
+
+		// If contact exists in either direction, return it
+		if (existingContact) {
+			return existingContact;
+		}
+
+		// Otherwise, create new contact
+		const newContact = await this.getDb()
 			.insert(schema.contacts)
 			.values({
 				connectedUserId: lender.id,
 				requestedUserId: borrowerId,
 			})
-			.onConflictDoUpdate({
-				target: [schema.contacts.connectedUserId, schema.contacts.requestedUserId],
-				set: {
-					connectedUserId: schema.contacts.connectedUserId, // no-op update
-				},
-			})
 			.returning()
 			.then(res => res[0]);
 
-		if (!getOrCreateContact) throw new NotFoundException('Contact not found');
+		if (!newContact) throw new NotFoundException('Contact not found');
 
-		return getOrCreateContact;
+		return newContact;
 	}
 
 	async getConnectedContacts(currentUserId: number): Promise<ConnectedContactList[]> {

@@ -5,349 +5,478 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
 		<title>New Loan Request</title>
-		<style>
-			* {
-				margin: 0;
-				padding: 0;
-				box-sizing: border-box;
-			}
-
-			body {
-				font-family:
-					-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
-					'Helvetica Neue', sans-serif;
-				background-color: #f5f5f7;
-				padding: 0;
-				margin: 0;
-				-webkit-font-smoothing: antialiased;
-				-moz-osx-font-smoothing: grayscale;
-			}
-
-			.email-wrapper {
-				width: 100%;
-				background-color: #f5f5f7;
-				padding: 40px 20px;
-			}
-
-			.email-container {
-				max-width: 600px;
-				margin: 0 auto;
-				background: #ffffff;
-				border-radius: 16px;
-				overflow: hidden;
-				box-shadow: 0 4px 24px rgba(102, 126, 234, 0.12);
-			}
-
-			.email-header {
-				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-				padding: 40px 30px;
-				text-align: center;
-				color: #ffffff;
-			}
-
-			.email-header h1 {
-				font-size: 28px;
-				font-weight: 700;
-				margin: 0 0 8px 0;
-				letter-spacing: -0.5px;
-			}
-
-			.email-header p {
-				font-size: 16px;
-				margin: 0;
-				opacity: 0.95;
-				font-weight: 400;
-			}
-
-			.email-icon {
-				width: 64px;
-				height: 64px;
-				background: rgba(255, 255, 255, 0.2);
-				border-radius: 50%;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				margin: 0 auto 20px;
-				backdrop-filter: blur(10px);
-			}
-
-			.email-icon svg {
-				width: 32px;
-				height: 32px;
-				fill: #ffffff;
-			}
-
-			.email-body {
-				padding: 40px 30px;
-			}
-
-			.greeting {
-				font-size: 18px;
-				font-weight: 600;
-				color: #1d1d1f;
-				margin-bottom: 16px;
-			}
-
-			.message {
-				font-size: 15px;
-				line-height: 1.6;
-				color: #424245;
-				margin-bottom: 30px;
-			}
-
-			.info-card {
-				background: linear-gradient(
-					135deg,
-					rgba(102, 126, 234, 0.05) 0%,
-					rgba(118, 75, 162, 0.05) 100%
-				);
-				border-left: 4px solid #667eea;
-				border-radius: 12px;
-				padding: 24px;
-				margin-bottom: 30px;
-			}
-
-			.info-row {
-				display: flex;
-				justify-content: space-between;
-				align-items: center;
-				padding: 12px 0;
-				border-bottom: 1px solid rgba(102, 126, 234, 0.1);
-			}
-
-			.info-row:last-child {
-				border-bottom: none;
-				padding-bottom: 0;
-			}
-
-			.info-row:first-child {
-				padding-top: 0;
-			}
-
-			.info-label {
-				font-size: 13px;
-				font-weight: 600;
-				color: #667eea;
-				text-transform: uppercase;
-				letter-spacing: 0.5px;
-			}
-
-			.info-value {
-				font-size: 15px;
-				font-weight: 600;
-				color: #1d1d1f;
-				text-align: right;
-			}
-
-			.info-value.amount {
-				font-size: 24px;
-				color: #667eea;
-				font-weight: 700;
-			}
-
-			.description-section {
-				background: #f9f9fb;
-				border-radius: 12px;
-				padding: 20px;
-				margin-bottom: 30px;
-			}
-
-			.description-label {
-				font-size: 13px;
-				font-weight: 600;
-				color: #667eea;
-				text-transform: uppercase;
-				letter-spacing: 0.5px;
-				margin-bottom: 8px;
-			}
-
-			.description-text {
-				font-size: 15px;
-				line-height: 1.6;
-				color: #424245;
-				margin: 0;
-			}
-
-			.button-container {
-				text-align: center;
-				margin: 30px 0;
-			}
-
-			.button {
-				display: inline-block;
-				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-				color: #ffffff;
-				text-decoration: none;
-				padding: 16px 40px;
-				border-radius: 12px;
-				font-size: 16px;
-				font-weight: 600;
-				box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
-				transition:
-					transform 0.2s,
-					box-shadow 0.2s;
-			}
-
-			.button:hover {
-				transform: translateY(-2px);
-				box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-			}
-
-			.divider {
-				height: 1px;
-				background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.2), transparent);
-				margin: 30px 0;
-			}
-
-			.footer-note {
-				font-size: 14px;
-				line-height: 1.6;
-				color: #86868b;
-				text-align: center;
-				margin-bottom: 20px;
-			}
-
-			.email-footer {
-				background: #f9f9fb;
-				padding: 30px;
-				text-align: center;
-			}
-
-			.email-footer p {
-				font-size: 13px;
-				color: #86868b;
-				line-height: 1.6;
-				margin: 0 0 8px 0;
-			}
-
-			.email-footer a {
-				color: #667eea;
-				text-decoration: none;
-				font-weight: 500;
-			}
-
-			.email-footer a:hover {
-				text-decoration: underline;
-			}
-
-			/* Responsive Design */
+		<style type="text/css">
+			/* Mobile Styles */
 			@media only screen and (max-width: 600px) {
-				.email-wrapper {
-					padding: 20px 10px;
+				.mobile-padding {
+					padding: 30px 20px !important;
 				}
-
-				.email-header {
-					padding: 30px 20px;
+				.mobile-header-padding {
+					padding: 40px 25px 36px !important;
 				}
-
-				.email-header h1 {
-					font-size: 24px;
+				.mobile-text-large {
+					font-size: 26px !important;
 				}
-
-				.email-body {
-					padding: 30px 20px;
+				.mobile-text-medium {
+					font-size: 20px !important;
 				}
-
-				.info-row {
-					flex-direction: column;
-					align-items: flex-start;
-					gap: 4px;
+				.mobile-text-small {
+					font-size: 15px !important;
 				}
-
-				.info-value {
-					text-align: left;
+				.mobile-icon {
+					width: 70px !important;
+					height: 70px !important;
+					line-height: 70px !important;
 				}
-
-				.button {
-					padding: 14px 32px;
-					font-size: 15px;
+				.mobile-icon-size {
+					font-size: 35px !important;
+				}
+				.mobile-amount {
+					font-size: 40px !important;
+				}
+				.mobile-button {
+					padding: 16px 32px !important;
+					font-size: 16px !important;
+					display: block !important;
+					width: 100% !important;
+					box-sizing: border-box !important;
+				}
+				.mobile-stack {
+					display: block !important;
+					width: 100% !important;
+				}
+				.mobile-stack td {
+					display: block !important;
+					width: 100% !important;
+					text-align: left !important;
+					padding: 0 !important;
+				}
+				.mobile-label {
+					padding-bottom: 6px !important;
+				}
+				.mobile-value {
+					padding-bottom: 14px !important;
+				}
+				.mobile-info-padding {
+					padding: 20px !important;
 				}
 			}
 		</style>
 	</head>
-	<body>
-		<div class="email-wrapper">
-			<div class="email-container">
-				<!-- Header -->
-				<div class="email-header">
-					<div class="email-icon">
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-							<path
-								d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"
-							/>
-						</svg>
-					</div>
-					<h1>New Loan Request</h1>
-					<p>You have received a new request</p>
-				</div>
+	<body
+		style="
+			margin: 0;
+			padding: 0;
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+			background-color: #f0f2f5;
+		"
+	>
+		<!-- Wrapper Table -->
+		<table
+			role="presentation"
+			width="100%"
+			cellpadding="0"
+			cellspacing="0"
+			border="0"
+			style="background-color: #f0f2f5"
+		>
+			<tr>
+				<td align="center" style="padding: 40px 20px">
+					<!-- Main Container Table -->
+					<table
+						role="presentation"
+						width="100%"
+						cellpadding="0"
+						cellspacing="0"
+						border="0"
+						style="
+							max-width: 600px;
+							background-color: #ffffff;
+							border-radius: 16px;
+							overflow: hidden;
+						"
+					>
+						<!-- Header Section -->
+						<tr>
+							<td
+								class="mobile-header-padding"
+								style="background-color: #7c3aed; padding: 50px 40px 46px; text-align: center"
+							>
+								<!-- Icon -->
+								<table
+									role="presentation"
+									width="80"
+									cellpadding="0"
+									cellspacing="0"
+									border="0"
+									align="center"
+									style="margin-bottom: 24px"
+								>
+									<tr>
+										<td
+											class="mobile-icon"
+											style="
+												background-color: rgba(255, 255, 255, 0.25);
+												border-radius: 50%;
+												width: 80px;
+												height: 80px;
+												text-align: center;
+												line-height: 80px;
+											"
+										>
+											<span class="mobile-icon-size" style="font-size: 40px; color: #ffffff"
+												>💰</span
+											>
+										</td>
+									</tr>
+								</table>
 
-				<!-- Body -->
-				<div class="email-body">
-					<p class="greeting">Hello {{lenderName}},</p>
+								<!-- Header Text -->
+								<h1
+									class="mobile-text-large"
+									style="
+										margin: 0 0 12px 0;
+										font-size: 32px;
+										font-weight: 700;
+										color: #ffffff;
+										line-height: 1.2;
+									"
+								>
+									New Loan Request
+								</h1>
+								<p
+									class="mobile-text-small"
+									style="margin: 0; font-size: 17px; color: #ffffff; opacity: 0.95"
+								>
+									You have received a new request
+								</p>
+							</td>
+						</tr>
 
-					<p class="message">
-						<strong>{{borrowerName}}</strong> has sent you a loan request. Please review the details
-						below and take appropriate action.
-					</p>
+						<!-- Accent Bar -->
+						<tr>
+							<td style="background-color: #f59e0b; height: 4px; line-height: 0; font-size: 0">
+								&nbsp;
+							</td>
+						</tr>
 
-					<!-- Transaction Details Card -->
-					<div class="info-card">
-						<div class="info-row">
-							<span class="info-label">Amount Requested</span>
-							<span class="info-value amount">${{amount}}</span>
-						</div>
-						<div class="info-row">
-							<span class="info-label">Requested By</span>
-							<span class="info-value">{{borrowerName}}</span>
-						</div>
-						<div class="info-row">
-							<span class="info-label">Request Date</span>
-							<span class="info-value">{{requestDate}}</span>
-						</div>
-						{{#if dueDate}}
-						<div class="info-row">
-							<span class="info-label">Due Date</span>
-							<span class="info-value">{{dueDate}}</span>
-						</div>
-						{{/if}}
-						<div class="info-row">
-							<span class="info-label">Transaction ID</span>
-							<span class="info-value">{{transactionId}}</span>
-						</div>
-					</div>
+						<!-- Body Section -->
+						<tr>
+							<td class="mobile-padding" style="padding: 45px 40px">
+								<!-- Greeting -->
+								<p
+									class="mobile-text-medium"
+									style="margin: 0 0 18px 0; font-size: 22px; font-weight: 700; color: #1e293b"
+								>
+									Hello {{lenderName}},
+								</p>
 
-					<!-- Description Section -->
-					{{#if description}}
-					<div class="description-section">
-						<div class="description-label">Description</div>
-						<p class="description-text">{{description}}</p>
-					</div>
-					{{/if}}
+								<!-- Message -->
+								<p
+									class="mobile-text-small"
+									style="margin: 0 0 35px 0; font-size: 16px; line-height: 1.7; color: #475569"
+								>
+									<strong style="color: #1e293b; font-weight: 600">{{borrowerName}}</strong> has
+									sent you a loan request. Please review the details below and take appropriate
+									action.
+								</p>
 
-					<!-- Action Button -->
-					<div class="button-container">
-						<a href="{{actionUrl}}" class="button">Review Request</a>
-					</div>
+								<!-- Amount Highlight Box -->
+								<table
+									role="presentation"
+									width="100%"
+									cellpadding="0"
+									cellspacing="0"
+									border="0"
+									style="margin-bottom: 30px"
+								>
+									<tr>
+										<td
+											style="
+												background-color: #7c3aed;
+												border-radius: 12px;
+												padding: 28px;
+												text-align: center;
+											"
+										>
+											<p
+												style="
+													margin: 0 0 8px 0;
+													font-size: 13px;
+													font-weight: 600;
+													color: rgba(255, 255, 255, 0.85);
+													text-transform: uppercase;
+													letter-spacing: 1px;
+												"
+											>
+												Amount Requested
+											</p>
+											<p
+												class="mobile-amount"
+												style="
+													margin: 0;
+													font-size: 48px;
+													font-weight: 800;
+													color: #ffffff;
+													line-height: 1;
+												"
+											>
+												${{amount}}
+											</p>
+										</td>
+									</tr>
+								</table>
 
-					<div class="divider"></div>
+								<!-- Transaction Details Card -->
+								<table
+									role="presentation"
+									width="100%"
+									cellpadding="0"
+									cellspacing="0"
+									border="0"
+									style="
+										background-color: #f8fafc;
+										border: 2px solid #e2e8f0;
+										border-radius: 12px;
+										margin-bottom: 30px;
+									"
+								>
+									<tr>
+										<td class="mobile-info-padding" style="padding: 24px 28px">
+											<!-- Info Row: Requested By -->
+											<table
+												class="mobile-stack"
+												role="presentation"
+												width="100%"
+												cellpadding="0"
+												cellspacing="0"
+												border="0"
+												style="border-bottom: 1px solid #e2e8f0"
+											>
+												<tr>
+													<td class="mobile-label" style="padding: 14px 0 14px 0">
+														<p style="margin: 0; font-size: 14px; font-weight: 600; color: #64748b">
+															• Requested By
+														</p>
+													</td>
+													<td class="mobile-value" align="right" style="padding: 14px 0 14px 0">
+														<p style="margin: 0; font-size: 15px; font-weight: 600; color: #1e293b">
+															{{borrowerName}}
+														</p>
+													</td>
+												</tr>
+											</table>
 
-					<p class="footer-note">
-						You can approve or reject this request from your dashboard. Make sure to review all the
-						details before making a decision.
-					</p>
-				</div>
+											<!-- Info Row: Request Date -->
+											<table
+												class="mobile-stack"
+												role="presentation"
+												width="100%"
+												cellpadding="0"
+												cellspacing="0"
+												border="0"
+												style="border-bottom: 1px solid #e2e8f0"
+											>
+												<tr>
+													<td class="mobile-label" style="padding: 14px 0 14px 0">
+														<p style="margin: 0; font-size: 14px; font-weight: 600; color: #64748b">
+															• Request Date
+														</p>
+													</td>
+													<td class="mobile-value" align="right" style="padding: 14px 0 14px 0">
+														<p style="margin: 0; font-size: 15px; font-weight: 600; color: #1e293b">
+															{{requestDate}}
+														</p>
+													</td>
+												</tr>
+											</table>
 
-				<!-- Footer -->
-				<div class="email-footer">
-					<p>This is an automated notification from Lenbow.</p>
-					<p>
-						If you have any questions, please <a href="mailto:{{supportEmail}}">contact support</a>.
-					</p>
-					<p style="margin-top: 16px; color: #a1a1a6; font-size: 12px">
-						&copy; {{year}} Lenbow. All rights reserved.
-					</p>
-				</div>
-			</div>
-		</div>
+											<!-- Info Row: Due Date (Conditional) -->
+											{{#if dueDate}}
+											<table
+												class="mobile-stack"
+												role="presentation"
+												width="100%"
+												cellpadding="0"
+												cellspacing="0"
+												border="0"
+												style="border-bottom: 1px solid #e2e8f0"
+											>
+												<tr>
+													<td class="mobile-label" style="padding: 14px 0 14px 0">
+														<p style="margin: 0; font-size: 14px; font-weight: 600; color: #64748b">
+															• Due Date
+														</p>
+													</td>
+													<td class="mobile-value" align="right" style="padding: 14px 0 14px 0">
+														<p style="margin: 0; font-size: 15px; font-weight: 600; color: #1e293b">
+															{{dueDate}}
+														</p>
+													</td>
+												</tr>
+											</table>
+											{{/if}}
+
+											<!-- Info Row: Transaction ID (Last, no border) -->
+											<table
+												class="mobile-stack"
+												role="presentation"
+												width="100%"
+												cellpadding="0"
+												cellspacing="0"
+												border="0"
+											>
+												<tr>
+													<td class="mobile-label" style="padding: 14px 0 0 0">
+														<p style="margin: 0; font-size: 14px; font-weight: 600; color: #64748b">
+															• Transaction ID
+														</p>
+													</td>
+													<td class="mobile-value" align="right" style="padding: 14px 0 0 0">
+														<p style="margin: 0; font-size: 15px; font-weight: 600; color: #1e293b">
+															{{transactionId}}
+														</p>
+													</td>
+												</tr>
+											</table>
+										</td>
+									</tr>
+								</table>
+
+								<!-- Description Section (Conditional) -->
+								{{#if description}}
+								<table
+									role="presentation"
+									width="100%"
+									cellpadding="0"
+									cellspacing="0"
+									border="0"
+									style="margin-bottom: 35px"
+								>
+									<tr>
+										<td
+											style="
+												background-color: #fef3c7;
+												border-left: 4px solid #f59e0b;
+												border-radius: 8px;
+												padding: 24px;
+											"
+										>
+											<p
+												style="
+													margin: 0 0 10px 0;
+													font-size: 12px;
+													font-weight: 700;
+													color: #92400e;
+													text-transform: uppercase;
+													letter-spacing: 1px;
+												"
+											>
+												📝 Description
+											</p>
+											<p style="margin: 0; font-size: 15px; line-height: 1.7; color: #78350f">
+												{{description}}
+											</p>
+										</td>
+									</tr>
+								</table>
+								{{/if}}
+
+								<!-- Action Button -->
+								<table
+									role="presentation"
+									width="100%"
+									cellpadding="0"
+									cellspacing="0"
+									border="0"
+									style="margin: 35px 0 25px 0"
+								>
+									<tr>
+										<td align="center">
+											<a
+												href="{{actionUrl}}"
+												class="mobile-button"
+												style="
+													display: inline-block;
+													background-color: #7c3aed;
+													color: #ffffff;
+													text-decoration: none;
+													padding: 18px 48px;
+													border-radius: 12px;
+													font-size: 17px;
+													font-weight: 700;
+													letter-spacing: 0.3px;
+												"
+												>Review Request</a
+											>
+										</td>
+									</tr>
+								</table>
+
+								<!-- Divider -->
+								<table
+									role="presentation"
+									width="100%"
+									cellpadding="0"
+									cellspacing="0"
+									border="0"
+									style="margin: 30px 0"
+								>
+									<tr>
+										<td style="border-top: 2px solid #e2e8f0">&nbsp;</td>
+									</tr>
+								</table>
+
+								<!-- Footer Note -->
+								<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+									<tr>
+										<td
+											style="
+												background-color: #f8fafc;
+												border-radius: 8px;
+												padding: 20px;
+												text-align: center;
+											"
+										>
+											<p style="margin: 0; font-size: 14px; line-height: 1.7; color: #64748b">
+												You can approve or reject this request from your dashboard. Make sure to
+												review all the details before making a decision.
+											</p>
+										</td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+
+						<!-- Footer Section -->
+						<tr>
+							<td
+								style="
+									background-color: #f8fafc;
+									padding: 35px 30px;
+									text-align: center;
+									border-top: 1px solid #e2e8f0;
+								"
+							>
+								<p style="margin: 0 0 10px 0; font-size: 13px; color: #64748b; line-height: 1.7">
+									This is an automated notification from Lenbow.
+								</p>
+								<p style="margin: 0 0 10px 0; font-size: 13px; color: #64748b; line-height: 1.7">
+									If you have any questions, please
+									<a
+										href="mailto:{{supportEmail}}"
+										style="color: #7c3aed; text-decoration: none; font-weight: 600"
+										>contact support</a
+									>.
+								</p>
+								<p style="margin: 16px 0 0 0; font-size: 12px; color: #94a3b8; line-height: 1.7">
+									&copy; {{year}} Lenbow. All rights reserved.
+								</p>
+							</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+		</table>
 	</body>
 </html>
