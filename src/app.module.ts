@@ -13,6 +13,7 @@ import { HistoryModule } from './app/history/history.module';
 import { BrevoModule } from './app/brevo/brevo.module';
 import { TemplateModule } from './app/template/template.module';
 import { CurrencyModule } from './app/currency/currency.module';
+import { OverviewModule } from './app/overview/overview.module';
 
 @Module({
 	imports: [
@@ -31,6 +32,7 @@ import { CurrencyModule } from './app/currency/currency.module';
 		BrevoModule,
 		TemplateModule,
 		CurrencyModule,
+		OverviewModule,
 	],
 	controllers: [AppController],
 })
