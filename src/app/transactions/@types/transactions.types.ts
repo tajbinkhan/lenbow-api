@@ -3,6 +3,8 @@ import {
 	type TransactionStatusEnum,
 	type TransactionTypeEnum,
 } from '../../../database/types';
+import { CurrencyData } from '../../currency/@types/currency.types';
+import { ValidateTransactionDto, ValidateUpdateTransactionDto } from '../transactions.schema';
 
 export type TransactionReturnType = Omit<
 	TransactionSchemaType,
@@ -27,6 +29,7 @@ export interface TransactionListReturnType {
 		image: string | null;
 	};
 	type: TransactionTypeEnum;
+	currency: CurrencyData;
 	amount: number;
 	amountPaid: number;
 	remainingAmount: number;
@@ -47,3 +50,14 @@ export interface TransactionEligibilityForDeletion {
 	ineligibleTransactions: number[];
 	eligibleTransactions: number[];
 }
+
+export type ValidateTransactionDtoWithCurrency = Omit<ValidateTransactionDto, 'currency'> & {
+	currency: CurrencyData;
+};
+
+export type ValidateUpdateTransactionDtoWithCurrency = Omit<
+	ValidateUpdateTransactionDto,
+	'currency'
+> & {
+	currency: CurrencyData;
+};

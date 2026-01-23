@@ -242,6 +242,7 @@ export class AuthService extends DrizzleService {
 			imageInformation: null,
 			emailVerified: true, // Google verified email
 			phone: null,
+			currencyCode: null,
 		});
 
 		// Create the account link

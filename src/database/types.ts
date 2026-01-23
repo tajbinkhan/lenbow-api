@@ -1,5 +1,6 @@
 import type { InferSelectModel } from 'drizzle-orm';
 import { accounts, sessions, users } from '../models/drizzle/auth.model';
+import { currencies } from '../models/drizzle/currency.model';
 import {
 	transactionHistoryActionEnum,
 	transactionStatusEnum,
@@ -14,6 +15,7 @@ export type SessionSchemaType = InferSelectModel<typeof sessions>;
 export type TransactionSchemaType = InferSelectModel<typeof transactions>;
 export type ContactSchemaType = InferSelectModel<typeof contacts>;
 export type TransactionHistoriesSchemaType = InferSelectModel<typeof transactionHistories>;
+export type CurrencySchemaType = InferSelectModel<typeof currencies>;
 
 /**
  * Enum Schema Types

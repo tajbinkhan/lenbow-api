@@ -13,6 +13,7 @@ import {
 	varchar,
 } from 'drizzle-orm/pg-core';
 import { timestamps } from '../../database/helpers';
+import { currencies } from './currency.model';
 
 export const users = pgTable(
 	'users',
@@ -26,6 +27,7 @@ export const users = pgTable(
 		image: text('image'),
 		imageInformation: json('image_information'),
 		phone: varchar('phone', { length: 20 }),
+		currencyCode: text('currency_code').references(() => currencies.code, { onDelete: 'set null' }),
 		is2faEnabled: boolean('is_2fa_enabled').default(false).notNull(),
 		...timestamps,
 	},

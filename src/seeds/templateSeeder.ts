@@ -88,6 +88,14 @@ const templates: TemplateData[] = [
 			'utf-8',
 		),
 	},
+	{
+		key: 'transaction_updated',
+		version: 1,
+		name: 'Transaction Updated',
+		description: 'Email sent to lender when borrower updates transaction details',
+		subject: 'Transaction Updated by {{borrowerName}}',
+		html: fs.readFileSync(path.join(__dirname, '../templates/transaction-updated.html'), 'utf-8'),
+	},
 ];
 
 async function seedTemplates() {

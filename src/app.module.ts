@@ -12,6 +12,7 @@ import { ContactsModule } from './app/contacts/contacts.module';
 import { HistoryModule } from './app/history/history.module';
 import { BrevoModule } from './app/brevo/brevo.module';
 import { TemplateModule } from './app/template/template.module';
+import { CurrencyModule } from './app/currency/currency.module';
 
 @Module({
 	imports: [
@@ -29,6 +30,7 @@ import { TemplateModule } from './app/template/template.module';
 		HistoryModule,
 		BrevoModule,
 		TemplateModule,
+		CurrencyModule,
 	],
 	controllers: [AppController],
 })

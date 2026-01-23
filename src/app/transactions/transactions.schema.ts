@@ -65,6 +65,7 @@ export const validateTransactionSchema = z.object({
 	amountPaid: validatePositiveNumber('Amount Paid').optional(),
 	remainingAmount: validatePositiveNumber('Remaining Amount').optional(),
 	status: validateEnum('Transaction Status', transactionStatusEnum.enumValues),
+	currency: validateString('Currency Code'),
 	description: validateString('Description').optional(),
 	rejectionReason: validateString('Rejection Reason').optional(),
 	dueDate: validateDate('Due Date').optional(),
@@ -101,6 +102,7 @@ export const validateUpdateStatusTransactionSchema = z.discriminatedUnion('statu
 
 export const validateUpdateTransactionSchema = z.object({
 	amount: validatePositiveNumber('Amount'),
+	currency: validateString('Currency Code'),
 	dueDate: validateDate('Due Date').optional(),
 });
 

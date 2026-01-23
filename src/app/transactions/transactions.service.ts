@@ -29,11 +29,11 @@ import {
 import type {
 	TransactionEligibilityForDeletion,
 	TransactionListReturnType,
+	ValidateTransactionDtoWithCurrency,
+	ValidateUpdateTransactionDtoWithCurrency,
 } from './@types/transactions.types';
 import {
 	RequestTransactionQuerySchemaType,
-	ValidateTransactionDto,
-	ValidateUpdateTransactionDto,
 	type TransactionQuerySchemaType,
 } from './transactions.schema';
 
@@ -47,7 +47,7 @@ export class TransactionsService extends DrizzleService {
 	}
 
 	async createTransaction(
-		data: Omit<ValidateTransactionDto, 'type'>,
+		data: Omit<ValidateTransactionDtoWithCurrency, 'type'>,
 	): Promise<TransactionSchemaType> {
 		const modifiedData = { ...data, remainingAmount: data.amount };
 
@@ -197,6 +197,7 @@ export class TransactionsService extends DrizzleService {
 					email: lenderUser.email,
 					image: lenderUser.image,
 				},
+				currency: schema.transactions.currency,
 				amount: schema.transactions.amount,
 				amountPaid: schema.transactions.amountPaid,
 				remainingAmount: schema.transactions.remainingAmount,
@@ -419,6 +420,7 @@ export class TransactionsService extends DrizzleService {
 					email: lenderUser.email,
 					image: lenderUser.image,
 				},
+				currency: schema.transactions.currency,
 				amount: schema.transactions.amount,
 				amountPaid: schema.transactions.amountPaid,
 				remainingAmount: schema.transactions.remainingAmount,
@@ -520,7 +522,7 @@ export class TransactionsService extends DrizzleService {
 
 	async updateTransaction(
 		id: number,
-		data: ValidateUpdateTransactionDto,
+		data: ValidateUpdateTransactionDtoWithCurrency,
 	): Promise<TransactionSchemaType> {
 		const updatedTransaction = await this.getDb()
 			.update(schema.transactions)

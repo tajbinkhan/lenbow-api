@@ -26,7 +26,8 @@
 		"db:migrate": "drizzle-kit migrate",
 		"db:push": "drizzle-kit push",
 		"db:clear": "ts-node src/database/clean.ts",
-		"db:seed": "ts-node src/seeds/templateSeeder.ts"
+		"db:seed:template": "ts-node src/seeds/templateSeeder.ts",
+		"db:seed:currency": "ts-node src/seeds/currencySeeder.ts"
 	},
 	"dependencies": {
 		"@getbrevo/brevo": "^3.0.1",

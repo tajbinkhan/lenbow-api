@@ -2,6 +2,7 @@ import {
 	decimal,
 	index,
 	integer,
+	jsonb,
 	pgTable,
 	serial,
 	text,
@@ -9,6 +10,7 @@ import {
 	uniqueIndex,
 	uuid,
 } from 'drizzle-orm/pg-core';
+import { CurrencyData } from '../../app/currency/@types/currency.types';
 import { timestamps } from '../../database/helpers';
 import { users } from './auth.model';
 import { transactionStatusEnum } from './enum.model';
@@ -48,6 +50,11 @@ export const transactions = pgTable(
 		lenderId: integer('lender_id')
 			.notNull()
 			.references(() => users.id, { onDelete: 'cascade' }),
+		currency: jsonb('currency').$type<CurrencyData>().notNull().default({
+			code: 'USD',
+			name: 'US Dollar',
+			symbol: '$',
+		}),
 		amount: decimal('amount', { precision: 10, scale: 2, mode: 'number' }).notNull(),
 		amountPaid: decimal('amount_paid', { precision: 10, scale: 2, mode: 'number' })
 			.notNull()

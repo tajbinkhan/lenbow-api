@@ -23,8 +23,14 @@ import { JwtAuthGuard } from '../auth/auth.guard';
 import { AuthService } from '../auth/auth.service';
 import { BrevoService } from '../brevo/brevo.service';
 import { ContactsService } from '../contacts/contacts.service';
+import { CurrencyService } from '../currency/currency.service';
 import { HistoryService } from '../history/history.service';
-import type { TransactionListReturnType, TransactionReturnType } from './@types/transactions.types';
+import type {
+	TransactionListReturnType,
+	TransactionReturnType,
+	ValidateTransactionDtoWithCurrency,
+	ValidateUpdateTransactionDtoWithCurrency,
+} from './@types/transactions.types';
 import {
 	requestTransactionQuerySchema,
 	transactionQuerySchema,
@@ -48,6 +54,7 @@ export class TransactionsController {
 		private readonly contactsService: ContactsService,
 		private readonly historyService: HistoryService,
 		private readonly brevoService: BrevoService,
+		private readonly currencyService: CurrencyService,
 		private configService: ConfigService<EnvType, true>,
 	) {}
 
@@ -95,12 +102,25 @@ export class TransactionsController {
 			borrowerId,
 		);
 
+		// Get currency details
+		const currencyDetails = await this.currencyService.getCurrencyByCode(
+			validateTransactionDto.currency,
+		);
+
 		const extendedDto: ValidateTransactionDto = {
 			...validateTransactionDto,
-			borrowerId: getContact.requestedUserId,
-			lenderId: getContact.connectedUserId,
+			borrowerId,
+			lenderId:
+				borrowerId === getContact.connectedUserId
+					? getContact.requestedUserId
+					: getContact.connectedUserId,
 			status: 'pending',
 		};
+
+		// Check if logged in user has default currency set, if not set it
+		if (!req.user?.currencyCode) {
+			await this.currencyService.addCurrencyToUser(borrowerId, currencyDetails.code);
+		}
 
 		// Validate the incoming data
 		const validate = validateTransactionSchema.safeParse(extendedDto);
@@ -110,8 +130,17 @@ export class TransactionsController {
 			);
 		}
 
+		const payload: Omit<ValidateTransactionDtoWithCurrency, 'type'> = {
+			...validate.data,
+			currency: {
+				symbol: currencyDetails.symbol,
+				name: currencyDetails.name,
+				code: currencyDetails.code,
+			},
+		};
+
 		// Create the transaction
-		const transaction = await this.transactionsService.createTransaction(validate.data);
+		const transaction = await this.transactionsService.createTransaction(payload);
 
 		const responseTransaction: TransactionReturnType = {
 			...transaction,
@@ -138,6 +167,7 @@ export class TransactionsController {
 					borrowerName: req.user?.name || 'User',
 					lenderName: lenderDetails.name || 'User',
 					amount: transaction.amount,
+					currencySymbol: transaction.currency.symbol,
 					requestDate: new Date(transaction.requestDate).toLocaleDateString('en-US', {
 						year: 'numeric',
 						month: 'long',
@@ -265,10 +295,22 @@ export class TransactionsController {
 		if (transaction.status !== 'pending')
 			throw new BadRequestException(`Only pending transactions can be updated.`);
 
+		const currencyDetails = await this.currencyService.getCurrencyByCode(validate.data.currency);
+
+		// Prepare update payload
+		const payload: ValidateUpdateTransactionDtoWithCurrency = {
+			...validate.data,
+			currency: {
+				symbol: currencyDetails.symbol,
+				name: currencyDetails.name,
+				code: currencyDetails.code,
+			},
+		};
+
 		// Update the transaction status
 		const updatedTransaction = await this.transactionsService.updateTransaction(
 			transaction.id,
-			validate.data,
+			payload,
 		);
 
 		const responseTransaction: TransactionReturnType = {
@@ -283,6 +325,38 @@ export class TransactionsController {
 			details: responseTransaction,
 			occurredAt: new Date(),
 		});
+
+		if (
+			transaction.amount !== updatedTransaction.amount ||
+			transaction.currency.code !== updatedTransaction.currency.code ||
+			transaction.dueDate?.toISOString() !== updatedTransaction.dueDate?.toISOString()
+		) {
+			// Send email notification to lender about the update
+			const lender = await this.authService.findUserById(transaction.lenderId);
+
+			await this.brevoService.sendFromTemplate({
+				to: [{ email: lender.email, name: lender.name || 'User' }],
+				templateKey: 'transaction_updated',
+				params: {
+					borrowerName: user.name,
+					lenderName: lender.name,
+					amount: updatedTransaction.amount.toFixed(2),
+					currencySymbol: updatedTransaction.currency.symbol,
+					currencyName: updatedTransaction.currency.name,
+					dueDate: updatedTransaction.dueDate
+						? new Date(updatedTransaction.dueDate).toLocaleDateString('en-US', {
+								year: 'numeric',
+								month: 'long',
+								day: 'numeric',
+							})
+						: undefined,
+					transactionId: updatedTransaction.publicId,
+					actionUrl: `${this.configService.get('APP_URL')}/requests?search=${updatedTransaction.publicId}`,
+					supportEmail: this.configService.get('BREVO_SENDER_EMAIL'),
+					year: new Date().getFullYear().toString(),
+				},
+			});
+		}
 
 		return createApiResponse(
 			HttpStatus.OK,
@@ -418,6 +492,7 @@ export class TransactionsController {
 					borrowerName: borrowerDetails.name || 'User',
 					lenderName: lenderDetails?.name || 'Lender',
 					amount: updatedTransaction.amount,
+					currencySymbol: updatedTransaction.currency.symbol,
 					acceptedAt: new Date(updatedTransaction.acceptedAt || new Date()).toLocaleDateString(
 						'en-US',
 						{
@@ -453,6 +528,7 @@ export class TransactionsController {
 					borrowerName: borrowerDetails.name || 'User',
 					lenderName: lenderDetails?.name || 'Lender',
 					amount: updatedTransaction.amount,
+					currencySymbol: updatedTransaction.currency.symbol,
 					rejectedAt: new Date(updatedTransaction.rejectedAt || new Date()).toLocaleDateString(
 						'en-US',
 						{
@@ -480,6 +556,7 @@ export class TransactionsController {
 					amount: updatedTransaction.amount,
 					amountPaid: updatedTransaction.amountPaid,
 					remainingAmount: updatedTransaction.remainingAmount,
+					currencySymbol: updatedTransaction.currency.symbol,
 					transactionId: updatedTransaction.publicId,
 					actionUrl: `${this.configService.get('APP_URL')}/lend?search=${updatedTransaction.publicId}`,
 					supportEmail: this.configService.get('BREVO_SENDER_EMAIL'),
@@ -490,6 +567,7 @@ export class TransactionsController {
 			// Notify both borrower and lender that loan is completed
 			const completedParams = {
 				amount: updatedTransaction.amount,
+				currencySymbol: updatedTransaction.currency.symbol,
 				completedAt: new Date(updatedTransaction.completedAt || new Date()).toLocaleDateString(
 					'en-US',
 					{
@@ -604,6 +682,7 @@ export class TransactionsController {
 				// Send completion email
 				const completedParams = {
 					amount: updatedTransaction.amount,
+					currencySymbol: updatedTransaction.currency.symbol,
 					completedAt: new Date(updatedTransaction.completedAt || new Date()).toLocaleDateString(
 						'en-US',
 						{
@@ -659,6 +738,7 @@ export class TransactionsController {
 						reviewAmount: transaction.reviewAmount,
 						amountPaid: updatedTransaction.amountPaid,
 						remainingAmount: updatedTransaction.remainingAmount,
+						currencySymbol: updatedTransaction.currency.symbol,
 						transactionId: updatedTransaction.publicId,
 						actionUrl: `${this.configService.get('APP_URL')}/borrow/${updatedTransaction.publicId}`,
 						supportEmail: this.configService.get('BREVO_SENDER_EMAIL'),
@@ -732,6 +812,7 @@ export class TransactionsController {
 					amount: updatedTransaction.amount,
 					amountPaid: updatedTransaction.amountPaid,
 					remainingAmount: updatedTransaction.remainingAmount,
+					currencySymbol: updatedTransaction.currency.symbol,
 					transactionId: updatedTransaction.publicId,
 					actionUrl: `${this.configService.get('APP_URL')}/transactions/${updatedTransaction.publicId}`,
 					supportEmail: this.configService.get('BREVO_SENDER_EMAIL'),
