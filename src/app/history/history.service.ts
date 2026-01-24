@@ -23,10 +23,13 @@ export class HistoryService extends DrizzleService {
 	): Promise<TransactionHistoriesSchemaType> {
 		const { details, ...rest } = data;
 
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const { id, ...detailsWithoutId } = details;
+
 		const entryDetails: TransactionHistoryDataEntryType = {
 			transactionPublicId: details.id,
 			details,
-			...details,
+			...detailsWithoutId,
 			...rest,
 		};
 
