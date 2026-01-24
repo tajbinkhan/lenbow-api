@@ -17,31 +17,6 @@ import { users } from './auth.model';
 import { transactionHistoryActionEnum, transactionStatusEnum } from './enum.model';
 import { transactions } from './transactions.model';
 
-export const transactionOldHistories = pgTable(
-	'transaction_old_histories',
-	{
-		id: serial('id').primaryKey(),
-		publicId: uuid('public_id').defaultRandom().notNull().unique(),
-		transactionId: integer('transaction_id').references(() => transactions.id, {
-			onDelete: 'set null',
-		}),
-		actorUserId: integer('actor_user_id')
-			.notNull()
-			.references(() => users.id, { onDelete: 'cascade' }),
-		action: transactionHistoryActionEnum('action').notNull(),
-		details: jsonb('details').$type<TransactionReturnType>().notNull(),
-		occurredAt: timestamp('occurred_at').defaultNow().notNull(),
-		...timestamps,
-	},
-	table => [
-		uniqueIndex('transaction_old_histories_public_id_idx').on(table.publicId),
-		index('transaction_old_histories_transaction_id_idx').on(table.transactionId),
-		index('transaction_old_histories_actor_user_id_idx').on(table.actorUserId),
-		index('transaction_old_histories_action_idx').on(table.action),
-		index('transaction_old_histories_occurred_at_idx').on(table.occurredAt),
-	],
-);
-
 export const transactionHistories = pgTable(
 	'transaction_histories',
 	{

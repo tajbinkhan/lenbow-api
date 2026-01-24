@@ -6,7 +6,7 @@ import {
 	transactionStatusEnum,
 	transactionTypeEnum,
 } from '../models/drizzle/enum.model';
-import { transactionHistories, transactionOldHistories } from '../models/drizzle/history.model';
+import { transactionHistories } from '../models/drizzle/history.model';
 import { transactions, type contacts } from '../models/drizzle/transactions.model';
 
 export type UserSchemaType = InferSelectModel<typeof users>;
@@ -14,7 +14,6 @@ export type AccountSchemaType = InferSelectModel<typeof accounts>;
 export type SessionSchemaType = InferSelectModel<typeof sessions>;
 export type TransactionSchemaType = InferSelectModel<typeof transactions>;
 export type ContactSchemaType = InferSelectModel<typeof contacts>;
-export type TransactionOldHistoriesSchemaType = InferSelectModel<typeof transactionOldHistories>;
 export type TransactionHistoriesSchemaType = InferSelectModel<typeof transactionHistories>;
 export type CurrencySchemaType = InferSelectModel<typeof currencies>;
 
