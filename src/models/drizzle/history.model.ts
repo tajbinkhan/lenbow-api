@@ -42,8 +42,8 @@ export const transactionOldHistories = pgTable(
 	],
 );
 
-export const transactionNewHistories = pgTable(
-	'transaction_new_histories',
+export const transactionHistories = pgTable(
+	'transaction_histories',
 	{
 		id: serial('id').primaryKey(),
 		publicId: uuid('public_id').defaultRandom().notNull().unique(),
@@ -90,12 +90,12 @@ export const transactionNewHistories = pgTable(
 		...timestamps,
 	},
 	table => [
-		uniqueIndex('transaction_new_histories_public_id_idx').on(table.publicId),
-		index('transaction_new_histories_transaction_id_idx').on(table.transactionId),
-		index('transaction_new_histories_borrower_id_idx').on(table.borrowerId),
-		index('transaction_new_histories_lender_id_idx').on(table.lenderId),
-		index('transaction_new_histories_status_idx').on(table.status),
-		index('transaction_new_histories_action_idx').on(table.action),
-		index('transaction_new_histories_occurred_at_idx').on(table.occurredAt),
+		uniqueIndex('transaction_histories_public_id_idx').on(table.publicId),
+		index('transaction_histories_transaction_id_idx').on(table.transactionId),
+		index('transaction_histories_borrower_id_idx').on(table.borrowerId),
+		index('transaction_histories_lender_id_idx').on(table.lenderId),
+		index('transaction_histories_status_idx').on(table.status),
+		index('transaction_histories_action_idx').on(table.action),
+		index('transaction_histories_occurred_at_idx').on(table.occurredAt),
 	],
 );

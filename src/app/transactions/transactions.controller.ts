@@ -149,7 +149,6 @@ export class TransactionsController {
 
 		await this.historyService.createTransactionHistoryRecord({
 			transactionId: transaction.id,
-			actorUserId: borrowerId,
 			action: 'create',
 			details: responseTransaction,
 			occurredAt: new Date(),
@@ -221,7 +220,6 @@ export class TransactionsController {
 			if (eligibleTransactions.includes(transaction.id)) {
 				await this.historyService.createTransactionHistoryRecord({
 					transactionId: null,
-					actorUserId: user!.id,
 					action: 'delete',
 					details: {
 						...transaction,
@@ -320,7 +318,6 @@ export class TransactionsController {
 
 		await this.historyService.createTransactionHistoryRecord({
 			transactionId: transaction.id,
-			actorUserId: user.id,
 			action: 'update',
 			details: responseTransaction,
 			occurredAt: new Date(),
@@ -473,7 +470,6 @@ export class TransactionsController {
 
 		await this.historyService.createTransactionHistoryRecord({
 			transactionId: transaction.id,
-			actorUserId: user!.id,
 			action: historyAction,
 			details: responseTransaction,
 			occurredAt: new Date(),
@@ -666,7 +662,6 @@ export class TransactionsController {
 
 		await this.historyService.createTransactionHistoryRecord({
 			transactionId: transaction.id,
-			actorUserId: user.id,
 			action: 'accept_repay',
 			details: responseTransaction,
 			occurredAt: new Date(),
@@ -791,7 +786,6 @@ export class TransactionsController {
 
 		await this.historyService.createTransactionHistoryRecord({
 			transactionId: transaction.id,
-			actorUserId: user.id,
 			action: 'reject_repay',
 			details: responseTransaction,
 			occurredAt: new Date(),

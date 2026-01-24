@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import schema from '../database/schema';
-import { transactionNewHistories, transactionOldHistories } from '../models/drizzle/history.model';
+import { transactionHistories, transactionOldHistories } from '../models/drizzle/history.model';
 
 // Load environment variables
 import * as dotenv from 'dotenv';
@@ -16,7 +16,7 @@ async function migrateHistoryData() {
 	const db = drizzle(pool, { schema });
 
 	console.log('🔄 Starting history data migration...');
-	console.log('📊 Migrating from transactionHistories to transactionNewHistories...');
+	console.log('📊 Migrating from transactionOldHistories to transactionHistories...');
 
 	try {
 		// Fetch all old history records
@@ -38,8 +38,8 @@ async function migrateHistoryData() {
 				// Skip if this history record has already been migrated
 				const existing = await db
 					.select()
-					.from(transactionNewHistories)
-					.where(eq(transactionNewHistories.publicId, history.publicId))
+					.from(transactionHistories)
+					.where(eq(transactionHistories.publicId, history.publicId))
 					.limit(1);
 
 				if (existing.length > 0) {
@@ -92,7 +92,7 @@ async function migrateHistoryData() {
 				};
 
 				// Insert into new table
-				await db.insert(transactionNewHistories).values(newHistoryData);
+				await db.insert(transactionHistories).values(newHistoryData);
 
 				console.log(`✅ Migrated: History ${history.publicId} (Action: ${history.action})`);
 				successCount++;
