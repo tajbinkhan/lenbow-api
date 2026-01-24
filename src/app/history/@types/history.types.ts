@@ -7,7 +7,7 @@ import { TransactionReturnType } from '../../transactions/@types/transactions.ty
 export interface TransactionHistoriesDataType {
 	transactionId: number | null;
 	action: TransactionHistoryActionEnum;
-	details: TransactionReturnType;
+	details: TransactionReturnType & { publicId?: string };
 	occurredAt: Date;
 }
 

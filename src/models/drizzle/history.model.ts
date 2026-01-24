@@ -11,7 +11,6 @@ import {
 	uuid,
 } from 'drizzle-orm/pg-core';
 import { CurrencyData } from '../../app/currency/@types/currency.types';
-import { TransactionReturnType } from '../../app/transactions/@types/transactions.types';
 import { timestamps } from '../../database/helpers';
 import { users } from './auth.model';
 import { transactionHistoryActionEnum, transactionStatusEnum } from './enum.model';
@@ -60,7 +59,6 @@ export const transactionHistories = pgTable(
 		completedAt: timestamp('completed_at'), // When loan was fully paid
 		rejectedAt: timestamp('rejected_at'), // When request was rejected
 		action: transactionHistoryActionEnum('action').notNull(),
-		details: jsonb('details').$type<TransactionReturnType>().notNull(),
 		occurredAt: timestamp('occurred_at').defaultNow().notNull(),
 		...timestamps,
 	},
