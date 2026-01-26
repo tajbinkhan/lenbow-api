@@ -77,7 +77,7 @@ export class HistoryService extends DrizzleService {
 
 		// Casts for non-text columns used in ILIKE
 		const userPublicIdText = sql<string>`${schema.users.publicId}::text`;
-		const txPublicIdText = sql<string>`${schema.transactionHistories.publicId}::text`;
+		const txPublicIdText = sql<string>`${schema.transactionHistories.transactionPublicId}::text`;
 		const amountText = sql<string>`${schema.transactionHistories.amount}::text`;
 		const amountPaidText = sql<string>`${schema.transactionHistories.amountPaid}::text`;
 
