@@ -1,9 +1,10 @@
+import { UploadApiResponse } from 'cloudinary';
 import { sql } from 'drizzle-orm';
 import {
 	boolean,
 	index,
 	integer,
-	json,
+	jsonb,
 	pgTable,
 	serial,
 	text,
@@ -25,7 +26,7 @@ export const users = pgTable(
 		password: text('password'),
 		emailVerified: boolean('email_verified').default(false).notNull(),
 		image: text('image'),
-		imageInformation: json('image_information'),
+		imageInformation: jsonb('image_information').$type<UploadApiResponse>(),
 		phone: varchar('phone', { length: 20 }),
 		currencyCode: text('currency_code').references(() => currencies.code, { onDelete: 'set null' }),
 		is2faEnabled: boolean('is_2fa_enabled').default(false).notNull(),

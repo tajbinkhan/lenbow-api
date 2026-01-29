@@ -4,6 +4,7 @@ import * as AuthSchema from "../models/drizzle/auth.model";
 import * as CurrencySchema from "../models/drizzle/currency.model";
 import * as EnumSchema from "../models/drizzle/enum.model";
 import * as HistorySchema from "../models/drizzle/history.model";
+import * as MediaSchema from "../models/drizzle/media.model";
 import * as RelationSchema from "../models/drizzle/relation.model";
 import * as TemplateSchema from "../models/drizzle/template.model";
 import * as TransactionsSchema from "../models/drizzle/transactions.model";
@@ -13,6 +14,7 @@ const schema = {
 	...CurrencySchema,
 	...EnumSchema,
 	...HistorySchema,
+	...MediaSchema,
 	...RelationSchema,
 	...TemplateSchema,
 	...TransactionsSchema

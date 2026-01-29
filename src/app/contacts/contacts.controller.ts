@@ -50,7 +50,7 @@ export class ContactsController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Get('/connected')
+	@Get('connected')
 	async getConnectedContactList(@Req() req: Request): Promise<ApiResponse<ConnectedContactList[]>> {
 		const currentUserId = req.user?.id;
 
@@ -60,7 +60,7 @@ export class ContactsController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Get('/:publicId')
+	@Get(':publicId')
 	async getContactByPublicId(
 		@Param('publicId', ParseUUIDPipe) publicId: string,
 		@Req() req: Request,

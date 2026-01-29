@@ -5,34 +5,60 @@ import {
 	Get,
 	HttpStatus,
 	Post,
+	Put,
+	Req,
 	Request,
 	Res,
+	UploadedFile,
 	UseGuards,
+	UseInterceptors,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { UploadApiResponse } from 'cloudinary';
 import type { Request as ExpressRequest, Response } from 'express';
+import { memoryStorage } from 'multer';
 import { type ApiResponse, createApiResponse } from '../../core/api-response.interceptor';
 import AppHelpers from '../../core/app.helper';
+import { CloudinaryImageService } from '../../core/cloudinary/upload';
 import { sessionTimeout } from '../../core/constants';
 import { EnvType } from '../../core/env';
+import { MediaDataType } from '../media/@types/media.types';
+import { FILE_SIZE_LIMIT, singleFileSchema, ZodFileValidationPipe } from '../media/media.pipe';
 import type {
 	CreateUser,
 	UserWithoutPassword,
 	UserWithoutPasswordResponse,
 } from './@types/auth.types';
 import { GoogleAuthGuard, JwtAuthGuard } from './auth.guard';
-import { type LoginDto, loginSchema, type RegisterDto, registerSchema } from './auth.schema';
+import {
+	type LoginDto,
+	loginSchema,
+	type RegisterDto,
+	registerSchema,
+	type UpdateProfileDto,
+	updateProfileSchema,
+} from './auth.schema';
 import { AuthService } from './auth.service';
 import { AuthSession } from './auth.session';
 import { GoogleProfile } from './strategies/google.strategy';
 
 @Controller('auth')
 export class AuthController {
+	private readonly cloudinaryImageService: CloudinaryImageService;
+
 	constructor(
 		private authService: AuthService,
 		private authSession: AuthSession,
 		private configService: ConfigService<EnvType, true>,
-	) {}
+	) {
+		this.cloudinaryImageService = new CloudinaryImageService({
+			cloudName: this.configService.get('CLOUDINARY_CLOUD_NAME'),
+			apiKey: this.configService.get('CLOUDINARY_API_KEY'),
+			apiSecret: this.configService.get('CLOUDINARY_API_SECRET'),
+			folder: 'user_profiles',
+		});
+	}
 
 	@Post('login')
 	async login(
@@ -137,6 +163,98 @@ export class AuthController {
 			id: user.publicId,
 		};
 		return createApiResponse(HttpStatus.OK, 'User profile fetched successfully', responseUser);
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@Put('profile')
+	async updateProfile(
+		@Body() updateData: UpdateProfileDto,
+		@Request() req: ExpressRequest,
+	): Promise<ApiResponse<UserWithoutPasswordResponse>> {
+		const userId = Number(req.user?.id);
+
+		const validate = updateProfileSchema.safeParse(updateData);
+		if (!validate.success) {
+			throw new BadRequestException(
+				`Validation failed: ${validate.error.issues.map(issue => issue.message).join(', ')}`,
+			);
+		}
+
+		const updatedUser = await this.authService.updateUser(userId, validate.data);
+
+		const responseUser: UserWithoutPasswordResponse = {
+			...updatedUser,
+			id: updatedUser.publicId,
+			imageInformation: null,
+		};
+
+		return createApiResponse(HttpStatus.OK, 'Profile updated successfully', responseUser);
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@Put('profile/image')
+	@UseInterceptors(
+		FileInterceptor('avatar', {
+			storage: memoryStorage(),
+			// Multer-level hard limit (fast fail before Zod, still validate in Zod too)
+			limits: { fileSize: FILE_SIZE_LIMIT },
+		}),
+	)
+	async uploadMedia(
+		@UploadedFile(new ZodFileValidationPipe(singleFileSchema))
+		file: Express.Multer.File,
+		@Req() request: ExpressRequest,
+	): Promise<ApiResponse<UserWithoutPassword>> {
+		const userId = Number(request.user?.id);
+		const result = await this.cloudinaryImageService.uploadFromBuffer(file.buffer);
+
+		// Validate 1:1 aspect ratio (square images only)
+		const width = result.data?.width;
+		const height = result.data?.height;
+
+		if (!width || !height) {
+			throw new BadRequestException('Unable to determine image dimensions');
+		}
+
+		if (width !== height) {
+			// Delete the uploaded image from Cloudinary since it doesn't meet requirements
+			await this.cloudinaryImageService.deleteMedia(result.data!.public_id);
+			throw new BadRequestException(
+				`Only square images (1:1 ratio) are allowed. Your image is ${width}x${height}`,
+			);
+		}
+
+		const data: MediaDataType = {
+			altText: null,
+			secureUrl: result.data!.secure_url,
+			filename: file.originalname,
+			mimeType: file.mimetype,
+			fileExtension: file.originalname.split('.').pop() || '',
+			fileSize: file.size,
+			storageKey: result.data!.public_id,
+			mediaType: file.mimetype.startsWith('image/') ? 'image' : 'other',
+			storageMetadata: result.data!,
+			uploadedBy: userId,
+			caption: null,
+			description: null,
+			tags: result.data!.tags || [],
+			duration: result.data!.duration || null,
+			width: result.data!.width || null,
+			height: result.data!.height || null,
+		};
+
+		// Delete previous image from Cloudinary if exists
+		const currentUser = await this.authService.findUserById(userId);
+		if (currentUser.imageInformation && currentUser.imageInformation.public_id) {
+			await this.cloudinaryImageService.deleteMedia(currentUser.imageInformation.public_id);
+		}
+
+		const response = await this.authService.updateUser(userId, {
+			image: data.secureUrl!,
+			imageInformation: result.data as UploadApiResponse,
+		});
+
+		return createApiResponse(HttpStatus.OK, 'Media uploaded successfully', response);
 	}
 
 	/**

@@ -8,6 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
+import { UploadApiResponse } from 'cloudinary';
 import { and, eq } from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { CloudinaryImageService } from '../../core/cloudinary/upload';
@@ -19,7 +20,7 @@ import schema from '../../database/schema';
 import DrizzleService from '../../database/service';
 import { UserSchemaType } from '../../database/types';
 import { CreateUser, UserWithoutPassword } from './@types/auth.types';
-import { LoginDto } from './auth.schema';
+import { LoginDto, UpdateProfileDto } from './auth.schema';
 import { AuthSession } from './auth.session';
 import { GoogleProfile } from './strategies/google.strategy';
 
@@ -147,7 +148,7 @@ export class AuthService extends DrizzleService {
 		if (data.password) hashedPassword = await bcrypt.hash(data.password, 10);
 
 		let imageUrl: string | null = null;
-		let imageInformation: Record<string, any> | null | undefined = null;
+		let imageInformation: UploadApiResponse | null | undefined = null;
 
 		if (data.image) {
 			const uploadResult = await this.cloudinaryImageService.uploadFromGoogleUrl(data.image, {
@@ -178,6 +179,23 @@ export class AuthService extends DrizzleService {
 
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		const { password, ...userWithoutPassword } = newUser;
+
+		return userWithoutPassword;
+	}
+
+	async updateUser(
+		userId: number,
+		data: UpdateProfileDto & { imageInformation?: UploadApiResponse | null },
+	): Promise<UserWithoutPassword> {
+		const updatedUser = await this.getDb()
+			.update(schema.users)
+			.set(data)
+			.where(eq(schema.users.id, userId))
+			.returning()
+			.then(rows => rows[0]);
+
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const { password, ...userWithoutPassword } = updatedUser;
 
 		return userWithoutPassword;
 	}

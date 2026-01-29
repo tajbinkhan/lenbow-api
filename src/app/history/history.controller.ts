@@ -22,7 +22,7 @@ export class HistoryController {
 	constructor(private readonly historyService: HistoryService) {}
 
 	@UseGuards(JwtAuthGuard)
-	@Get('/transactions')
+	@Get('transactions')
 	async getTransactionHistoryList(
 		@Req() req: Request,
 		@Query() query: TransactionHistoryQuerySchemaType,

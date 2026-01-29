@@ -7,10 +7,12 @@ import {
 	transactionTypeEnum,
 } from '../models/drizzle/enum.model';
 import { transactionHistories } from '../models/drizzle/history.model';
+import { media } from '../models/drizzle/media.model';
 import { transactions, type contacts } from '../models/drizzle/transactions.model';
 
 export type UserSchemaType = InferSelectModel<typeof users>;
 export type AccountSchemaType = InferSelectModel<typeof accounts>;
+export type MediaSchemaType = InferSelectModel<typeof media>;
 export type SessionSchemaType = InferSelectModel<typeof sessions>;
 export type TransactionSchemaType = InferSelectModel<typeof transactions>;
 export type ContactSchemaType = InferSelectModel<typeof contacts>;

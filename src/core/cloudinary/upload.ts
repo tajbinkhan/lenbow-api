@@ -28,7 +28,7 @@ interface UploadOptions {
 }
 
 // Upload result interface
-interface UploadResult {
+export interface UploadResult {
 	success: boolean;
 	data?: UploadApiResponse;
 	error?: string;
@@ -210,7 +210,7 @@ export class CloudinaryImageService {
 	 * @param publicId - Public ID of the image to delete
 	 * @returns Deletion result
 	 */
-	async deleteImage(publicId: string): Promise<{ success: boolean; error?: string }> {
+	async deleteMedia(publicId: string): Promise<{ success: boolean; error?: string }> {
 		try {
 			await cloudinary.uploader.destroy(publicId);
 			return { success: true };

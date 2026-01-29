@@ -240,7 +240,7 @@ export class TransactionsController {
 	}
 
 	@UseGuards(JwtAuthGuard)
-	@Get('/requested')
+	@Get('requested')
 	async getRequestedTransactionList(
 		@Req() req: Request,
 		@Query() query: RequestTransactionQuerySchemaType,
