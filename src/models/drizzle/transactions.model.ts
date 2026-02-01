@@ -80,7 +80,7 @@ export const transactions = pgTable(
 
 		// Transaction created by
 		createdBy: integer('created_by')
-			// .notNull()
+			.notNull()
 			.references(() => users.id, { onDelete: 'cascade' }),
 		...timestamps,
 	},
