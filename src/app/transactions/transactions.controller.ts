@@ -310,8 +310,8 @@ export class TransactionsController {
 		// Fetch the transaction by its public ID
 		const transaction = await this.transactionsService.getTransactionByPublicId(publicId);
 
-		if (transaction.borrowerId !== user?.id)
-			throw new BadRequestException(`Only borrower can update the transaction details.`);
+		if (transaction.createdBy !== user?.id)
+			throw new BadRequestException(`Only transaction creator can update the transaction.`);
 
 		if (transaction.status !== 'pending')
 			throw new BadRequestException(`Only pending transactions can be updated.`);
