@@ -7,6 +7,8 @@ import { contacts, transactions } from './transactions.model';
 export const usersRelations = relations(users, ({ many }) => ({
 	requestedContacts: many(contacts, { relationName: 'requested' }),
 	connectedContacts: many(contacts, { relationName: 'connected' }),
+	borrowerHistories: many(transactionHistories, { relationName: 'borrowerHistories' }),
+	lenderHistories: many(transactionHistories, { relationName: 'lenderHistories' }),
 }));
 
 export const contactsRelations = relations(contacts, ({ one }) => ({
@@ -22,10 +24,6 @@ export const contactsRelations = relations(contacts, ({ one }) => ({
 	}),
 }));
 
-export const usersHistoryRelations = relations(users, ({ many }) => ({
-	histories: many(transactionHistories),
-}));
-
 export const transactionsRelations = relations(transactions, ({ many }) => ({
 	histories: many(transactionHistories),
 }));
@@ -38,9 +36,11 @@ export const transactionHistoriesRelations = relations(transactionHistories, ({ 
 	borrower: one(users, {
 		fields: [transactionHistories.borrowerId],
 		references: [users.id],
+		relationName: 'borrowerHistories',
 	}),
 	lender: one(users, {
 		fields: [transactionHistories.lenderId],
 		references: [users.id],
+		relationName: 'lenderHistories',
 	}),
 }));

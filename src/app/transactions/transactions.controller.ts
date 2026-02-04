@@ -91,7 +91,7 @@ export class TransactionsController {
 		@Req() req: Request,
 	): Promise<ApiResponse<TransactionReturnType>> {
 		const loggedInUserId = Number(req.user?.id);
-		const contactId = String(incomingDto.contactId);
+		const contactId = incomingDto.contactId;
 
 		// Validate incoming data
 		const validateIncoming = validateIncomingTransactionSchema.safeParse(incomingDto);
@@ -130,6 +130,11 @@ export class TransactionsController {
 		const currencyDetails = await this.currencyService.getCurrencyByCode(
 			validateIncoming.data.currency,
 		);
+
+		// Check if logged in user has default currency set, if not set it
+		if (!req.user?.currencyCode) {
+			await this.currencyService.addCurrencyToUser(loggedInUserId, currencyDetails.code);
+		}
 
 		const extendedDto: ValidateTransactionDto = {
 			...validateIncoming.data,
@@ -177,38 +182,75 @@ export class TransactionsController {
 			occurredAt: new Date(),
 		});
 
-		// Fetch lender details to send email
-		const lenderDetails = await this.authService.findUserById(transaction.lenderId);
+		// Send email notification to the appropriate party based on who created the transaction
+		// If borrower created (type: 'borrow'), send to lender
+		// If lender created (type: 'lend'), send to borrower
+		if (validateIncoming.data.type === 'borrow') {
+			// Borrower is requesting money from lender - send email to lender
+			const lenderDetails = await this.authService.findUserById(lenderId);
 
-		// Send email notification to lender
-		if (lenderDetails) {
-			await this.brevoService.sendFromTemplate({
-				templateKey: 'request_send',
-				to: [{ email: lenderDetails.email, name: lenderDetails.name || 'User' }],
-				params: {
-					borrowerName: req.user?.name || 'User',
-					lenderName: lenderDetails.name || 'User',
-					amount: transaction.amount,
-					currencySymbol: transaction.currency.symbol,
-					requestDate: new Date(transaction.requestDate).toLocaleDateString('en-US', {
-						year: 'numeric',
-						month: 'long',
-						day: 'numeric',
-					}),
-					dueDate: transaction.dueDate
-						? new Date(transaction.dueDate).toLocaleDateString('en-US', {
-								year: 'numeric',
-								month: 'long',
-								day: 'numeric',
-							})
-						: '',
-					description: transaction.description || '',
-					transactionId: transaction.publicId,
-					actionUrl: `${this.configService.get('APP_URL')}/requests?search=${transaction.publicId}`,
-					supportEmail: this.configService.get('BREVO_SENDER_EMAIL'),
-					year: new Date().getFullYear(),
-				},
-			});
+			if (lenderDetails) {
+				await this.brevoService.sendFromTemplate({
+					templateKey: 'loan_request_from_borrower',
+					to: [{ email: lenderDetails.email, name: lenderDetails.name || 'User' }],
+					params: {
+						borrowerName: req.user?.name || 'User',
+						lenderName: lenderDetails.name || 'User',
+						amount: transaction.amount,
+						currencySymbol: transaction.currency.symbol,
+						requestDate: new Date(transaction.requestDate).toLocaleDateString('en-US', {
+							year: 'numeric',
+							month: 'long',
+							day: 'numeric',
+						}),
+						dueDate: transaction.dueDate
+							? new Date(transaction.dueDate).toLocaleDateString('en-US', {
+									year: 'numeric',
+									month: 'long',
+									day: 'numeric',
+								})
+							: '',
+						description: transaction.description || '',
+						transactionId: transaction.publicId,
+						actionUrl: `${this.configService.get('APP_URL')}/requests?search=${transaction.publicId}`,
+						supportEmail: this.configService.get('BREVO_SENDER_EMAIL'),
+						year: new Date().getFullYear(),
+					},
+				});
+			}
+		} else {
+			// Lender is offering to lend money to borrower - send email to borrower
+			const borrowerDetails = await this.authService.findUserById(borrowerId);
+
+			if (borrowerDetails) {
+				await this.brevoService.sendFromTemplate({
+					templateKey: 'loan_offer_from_lender',
+					to: [{ email: borrowerDetails.email, name: borrowerDetails.name || 'User' }],
+					params: {
+						borrowerName: borrowerDetails.name || 'User',
+						lenderName: req.user?.name || 'User',
+						amount: transaction.amount,
+						currencySymbol: transaction.currency.symbol,
+						requestDate: new Date(transaction.requestDate).toLocaleDateString('en-US', {
+							year: 'numeric',
+							month: 'long',
+							day: 'numeric',
+						}),
+						dueDate: transaction.dueDate
+							? new Date(transaction.dueDate).toLocaleDateString('en-US', {
+									year: 'numeric',
+									month: 'long',
+									day: 'numeric',
+								})
+							: '',
+						description: transaction.description || '',
+						transactionId: transaction.publicId,
+						actionUrl: `${this.configService.get('APP_URL')}/requests?search=${transaction.publicId}`,
+						supportEmail: this.configService.get('BREVO_SENDER_EMAIL'),
+						year: new Date().getFullYear(),
+					},
+				});
+			}
 		}
 
 		return createApiResponse(
@@ -326,6 +368,7 @@ export class TransactionsController {
 				name: currencyDetails.name,
 				code: currencyDetails.code,
 			},
+			updatedBy: user.id,
 		};
 
 		// Update the transaction status
@@ -351,31 +394,42 @@ export class TransactionsController {
 			transaction.currency.code !== updatedTransaction.currency.code ||
 			transaction.dueDate?.toISOString() !== updatedTransaction.dueDate?.toISOString()
 		) {
-			// Send email notification to lender about the update
-			const lender = await this.authService.findUserById(transaction.lenderId);
+			// Send email notification to the OTHER party (not the one who created/updated it)
+			// If borrower created (is borrowing), notify lender
+			// If lender created (is lending), notify borrower
+			const isCreatedByBorrower = transaction.createdBy === transaction.borrowerId;
+			const recipientId = isCreatedByBorrower ? transaction.lenderId : transaction.borrowerId;
+			const recipient = await this.authService.findUserById(recipientId);
 
-			await this.brevoService.sendFromTemplate({
-				to: [{ email: lender.email, name: lender.name || 'User' }],
-				templateKey: 'transaction_updated',
-				params: {
-					borrowerName: user.name,
-					lenderName: lender.name,
-					amount: updatedTransaction.amount.toFixed(2),
-					currencySymbol: updatedTransaction.currency.symbol,
-					currencyName: updatedTransaction.currency.name,
-					dueDate: updatedTransaction.dueDate
-						? new Date(updatedTransaction.dueDate).toLocaleDateString('en-US', {
-								year: 'numeric',
-								month: 'long',
-								day: 'numeric',
-							})
-						: undefined,
-					transactionId: updatedTransaction.publicId,
-					actionUrl: `${this.configService.get('APP_URL')}/requests?search=${updatedTransaction.publicId}`,
-					supportEmail: this.configService.get('BREVO_SENDER_EMAIL'),
-					year: new Date().getFullYear().toString(),
-				},
-			});
+			if (recipient) {
+				const updatedByUser = await this.authService.findUserById(updatedTransaction.updatedBy!);
+				const borrowerDetails = await this.authService.findUserById(transaction.borrowerId);
+				const lenderDetails = await this.authService.findUserById(transaction.lenderId);
+
+				await this.brevoService.sendFromTemplate({
+					to: [{ email: recipient.email, name: recipient.name || 'User' }],
+					templateKey: 'transaction_updated',
+					params: {
+						updatedByName: updatedByUser?.name || 'User',
+						borrowerName: borrowerDetails?.name || 'Borrower',
+						lenderName: lenderDetails?.name || 'Lender',
+						amount: updatedTransaction.amount.toFixed(2),
+						currencySymbol: updatedTransaction.currency.symbol,
+						currencyName: updatedTransaction.currency.name,
+						dueDate: updatedTransaction.dueDate
+							? new Date(updatedTransaction.dueDate).toLocaleDateString('en-US', {
+									year: 'numeric',
+									month: 'long',
+									day: 'numeric',
+								})
+							: undefined,
+						transactionId: updatedTransaction.publicId,
+						actionUrl: `${this.configService.get('APP_URL')}/requests?search=${updatedTransaction.publicId}`,
+						supportEmail: this.configService.get('BREVO_SENDER_EMAIL'),
+						year: new Date().getFullYear().toString(),
+					},
+				});
+			}
 		}
 
 		return createApiResponse(

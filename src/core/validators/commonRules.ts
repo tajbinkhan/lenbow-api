@@ -84,11 +84,20 @@ const baseEnum = <const T extends readonly [string, ...string[]]>(name: string, 
 	});
 
 const baseDate = (name: string) =>
-	baseString(name)
-		.refine(value => !isNaN(new Date(value).getTime()), {
-			error: zodMessages.error.invalid.invalidDate(name),
+	z
+		.union([z.string(), z.date()], {
+			error: () => makeError(name, 'invalid', `${name} must be a string or Date`),
 		})
-		.transform(value => new Date(value));
+		.refine(
+			value => {
+				const date = value instanceof Date ? value : new Date(value);
+				return !isNaN(date.getTime());
+			},
+			{
+				error: zodMessages.error.invalid.invalidDate(name),
+			},
+		)
+		.transform(value => (value instanceof Date ? value : new Date(value)));
 
 const baseEmail = (
 	name: string,

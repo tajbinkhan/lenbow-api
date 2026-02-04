@@ -4,7 +4,7 @@
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
-		<title>Transaction Updated</title>
+		<title>New Loan Offer</title>
 		<style type="text/css">
 			/* Mobile Styles */
 			@media only screen and (max-width: 600px) {
@@ -100,7 +100,7 @@
 						<tr>
 							<td
 								class="mobile-header-padding"
-								style="background-color: #f59e0b; padding: 50px 40px 46px; text-align: center"
+								style="background-color: #10b981; padding: 50px 40px 46px; text-align: center"
 							>
 								<!-- Icon -->
 								<table
@@ -125,7 +125,7 @@
 											"
 										>
 											<span class="mobile-icon-size" style="font-size: 40px; color: #ffffff"
-												>📝</span
+												>🤝</span
 											>
 										</td>
 									</tr>
@@ -142,32 +142,47 @@
 										line-height: 1.2;
 									"
 								>
-									Transaction Updated
+									New Loan Offer
 								</h1>
 								<p
 									class="mobile-text-small"
 									style="margin: 0; font-size: 17px; color: #ffffff; opacity: 0.95"
 								>
-									{{updatedByName}} has updated the transaction details
+									Someone wants to lend you money
 								</p>
 							</td>
 						</tr>
 
-						<!-- Content Section -->
+						<!-- Accent Bar -->
 						<tr>
-							<td class="mobile-padding" style="padding: 40px 50px 30px">
+							<td style="background-color: #3b82f6; height: 4px; line-height: 0; font-size: 0">
+								&nbsp;
+							</td>
+						</tr>
+
+						<!-- Body Section -->
+						<tr>
+							<td class="mobile-padding" style="padding: 45px 40px">
 								<!-- Greeting -->
-								<p style="margin: 0 0 20px 0; font-size: 16px; color: #1f2937; line-height: 1.6">
-									Hi <strong>{{lenderName}}</strong>,
+								<p
+									class="mobile-text-medium"
+									style="margin: 0 0 18px 0; font-size: 22px; font-weight: 700; color: #1e293b"
+								>
+									Hello {{borrowerName}},
 								</p>
 
-								<!-- Main Message -->
-								<p style="margin: 0 0 30px 0; font-size: 16px; color: #1f2937; line-height: 1.6">
-									{{updatedByName}} has updated the details of a pending transaction. Please review
-									the updated information below.
+								<!-- Message -->
+								<p
+									class="mobile-text-small"
+									style="margin: 0 0 35px 0; font-size: 16px; line-height: 1.7; color: #475569"
+								>
+									Good news!
+									<strong style="color: #1e293b; font-weight: 600">{{lenderName}}</strong>
+									is offering to lend you money. Please review the offer details below and decide
+									whether to accept or reject.
 								</p>
 
-								<!-- Amount Highlight Card -->
+								<!-- Amount Highlight Box -->
 								<table
 									role="presentation"
 									width="100%"
@@ -179,7 +194,7 @@
 									<tr>
 										<td
 											style="
-												background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+												background-color: #10b981;
 												border-radius: 12px;
 												padding: 28px;
 												text-align: center;
@@ -195,7 +210,7 @@
 													letter-spacing: 1px;
 												"
 											>
-												Updated Amount
+												Amount Offered
 											</p>
 											<p
 												class="mobile-amount"
@@ -229,7 +244,7 @@
 								>
 									<tr>
 										<td class="mobile-info-padding" style="padding: 24px 28px">
-											<!-- Info Row: Updated By -->
+											<!-- Info Row: Offered By -->
 											<table
 												class="mobile-stack"
 												role="presentation"
@@ -242,18 +257,18 @@
 												<tr>
 													<td class="mobile-label" style="padding: 14px 0 14px 0">
 														<p style="margin: 0; font-size: 14px; font-weight: 600; color: #64748b">
-															• Updated By
+															• Offered By
 														</p>
 													</td>
 													<td class="mobile-value" align="right" style="padding: 14px 0 14px 0">
 														<p style="margin: 0; font-size: 15px; font-weight: 600; color: #1e293b">
-															{{updatedByName}}
+															{{lenderName}}
 														</p>
 													</td>
 												</tr>
 											</table>
 
-											<!-- Info Row: Amount -->
+											<!-- Info Row: Offer Date -->
 											<table
 												class="mobile-stack"
 												role="presentation"
@@ -266,18 +281,19 @@
 												<tr>
 													<td class="mobile-label" style="padding: 14px 0 14px 0">
 														<p style="margin: 0; font-size: 14px; font-weight: 600; color: #64748b">
-															• Amount
+															• Offer Date
 														</p>
 													</td>
 													<td class="mobile-value" align="right" style="padding: 14px 0 14px 0">
 														<p style="margin: 0; font-size: 15px; font-weight: 600; color: #1e293b">
-															{{currencySymbol}}{{amount}}
+															{{requestDate}}
 														</p>
 													</td>
 												</tr>
 											</table>
 
-											<!-- Info Row: Currency -->
+											<!-- Info Row: Due Date (Conditional) -->
+											{{#if dueDate}}
 											<table
 												class="mobile-stack"
 												role="presentation"
@@ -290,31 +306,7 @@
 												<tr>
 													<td class="mobile-label" style="padding: 14px 0 14px 0">
 														<p style="margin: 0; font-size: 14px; font-weight: 600; color: #64748b">
-															• Currency
-														</p>
-													</td>
-													<td class="mobile-value" align="right" style="padding: 14px 0 14px 0">
-														<p style="margin: 0; font-size: 15px; font-weight: 600; color: #1e293b">
-															{{currencyName}}
-														</p>
-													</td>
-												</tr>
-											</table>
-
-											<!-- Info Row: Due Date -->
-											<table
-												class="mobile-stack"
-												role="presentation"
-												width="100%"
-												cellpadding="0"
-												cellspacing="0"
-												border="0"
-												style="border-bottom: 1px solid #e2e8f0"
-											>
-												<tr>
-													<td class="mobile-label" style="padding: 14px 0 14px 0">
-														<p style="margin: 0; font-size: 14px; font-weight: 600; color: #64748b">
-															• Due Date
+															• Expected Due Date
 														</p>
 													</td>
 													<td class="mobile-value" align="right" style="padding: 14px 0 14px 0">
@@ -324,6 +316,7 @@
 													</td>
 												</tr>
 											</table>
+											{{/if}}
 
 											<!-- Info Row: Transaction ID (Last, no border) -->
 											<table
@@ -341,15 +334,7 @@
 														</p>
 													</td>
 													<td class="mobile-value" align="right" style="padding: 14px 0 0 0">
-														<p
-															style="
-																margin: 0;
-																font-size: 13px;
-																font-weight: 600;
-																color: #7c3aed;
-																font-family: 'Courier New', monospace;
-															"
-														>
+														<p style="margin: 0; font-size: 15px; font-weight: 600; color: #1e293b">
 															{{transactionId}}
 														</p>
 													</td>
@@ -359,14 +344,53 @@
 									</tr>
 								</table>
 
-								<!-- CTA Button -->
+								<!-- Description Section (Conditional) -->
+								{{#if description}}
 								<table
 									role="presentation"
 									width="100%"
 									cellpadding="0"
 									cellspacing="0"
 									border="0"
-									style="margin-bottom: 30px"
+									style="margin-bottom: 35px"
+								>
+									<tr>
+										<td
+											style="
+												background-color: #dbeafe;
+												border-left: 4px solid #3b82f6;
+												border-radius: 8px;
+												padding: 24px;
+											"
+										>
+											<p
+												style="
+													margin: 0 0 10px 0;
+													font-size: 12px;
+													font-weight: 700;
+													color: #1e3a8a;
+													text-transform: uppercase;
+													letter-spacing: 1px;
+												"
+											>
+												📝 Note from Lender
+											</p>
+											<p style="margin: 0; font-size: 15px; line-height: 1.7; color: #1e40af">
+												{{description}}
+											</p>
+										</td>
+									</tr>
+								</table>
+								{{/if}}
+
+								<!-- Action Button -->
+								<table
+									role="presentation"
+									width="100%"
+									cellpadding="0"
+									cellspacing="0"
+									border="0"
+									style="margin: 35px 0 25px 0"
 								>
 									<tr>
 										<td align="center">
@@ -375,48 +399,20 @@
 												class="mobile-button"
 												style="
 													display: inline-block;
-													background-color: #f59e0b;
+													background-color: #10b981;
 													color: #ffffff;
-													padding: 18px 40px;
 													text-decoration: none;
-													border-radius: 8px;
+													padding: 18px 48px;
+													border-radius: 12px;
 													font-size: 17px;
-													font-weight: 600;
-													text-align: center;
-													transition: background-color 0.3s;
+													font-weight: 700;
+													letter-spacing: 0.3px;
 												"
+												>Review Offer</a
 											>
-												Review Updated Request
-											</a>
 										</td>
 									</tr>
 								</table>
-
-								<!-- Additional Info -->
-								<p style="margin: 0 0 10px 0; font-size: 15px; color: #6b7280; line-height: 1.6">
-									Please review these changes and decide whether to approve or reject the updated
-									request.
-								</p>
-							</td>
-						</tr>
-
-						<!-- Footer Section -->
-						<tr>
-							<td style="background-color: #f9fafb; padding: 30px 40px; text-align: center">
-								<!-- Support Section -->
-								<p style="margin: 0 0 16px 0; font-size: 14px; color: #6b7280; line-height: 1.6">
-									Need help? Contact us at
-									<a
-										href="mailto:{{supportEmail}}"
-										style="color: #7c3aed; text-decoration: none; font-weight: 600"
-										>{{supportEmail}}</a
-									>
-								</p>
-
-								<!-- Legal Text -->
-								<p style="margin: 0; font-size: 12px; color: #9ca3af; line-height: 1.5">
-									This is an automated notification. Please do not reply to this email.
-								</p>
 
 								<!-- Divider -->
 								<table
@@ -425,16 +421,58 @@
 									cellpadding="0"
 									cellspacing="0"
 									border="0"
-									style="margin: 20px 0"
+									style="margin: 30px 0"
 								>
 									<tr>
-										<td style="border-top: 1px solid #e5e7eb"></td>
+										<td style="border-top: 2px solid #e2e8f0">&nbsp;</td>
 									</tr>
 								</table>
 
-								<!-- Copyright -->
-								<p style="margin: 0; font-size: 12px; color: #9ca3af">
-									© {{year}} Loan App. All rights reserved.
+								<!-- Footer Note -->
+								<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+									<tr>
+										<td
+											style="
+												background-color: #f0fdf4;
+												border-radius: 8px;
+												padding: 20px;
+												text-align: center;
+												border: 1px solid #bbf7d0;
+											"
+										>
+											<p style="margin: 0; font-size: 14px; line-height: 1.7; color: #15803d">
+												💡 You can accept or reject this offer from your dashboard. Review all terms
+												carefully before making your decision.
+											</p>
+										</td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+
+						<!-- Footer Section -->
+						<tr>
+							<td
+								style="
+									background-color: #f8fafc;
+									padding: 35px 30px;
+									text-align: center;
+									border-top: 1px solid #e2e8f0;
+								"
+							>
+								<p style="margin: 0 0 10px 0; font-size: 13px; color: #64748b; line-height: 1.7">
+									This is an automated notification from Lenbow.
+								</p>
+								<p style="margin: 0 0 10px 0; font-size: 13px; color: #64748b; line-height: 1.7">
+									If you have any questions, please
+									<a
+										href="mailto:{{supportEmail}}"
+										style="color: #10b981; text-decoration: none; font-weight: 600"
+										>contact support</a
+									>.
+								</p>
+								<p style="margin: 16px 0 0 0; font-size: 12px; color: #94a3b8; line-height: 1.7">
+									&copy; {{year}} Lenbow. All rights reserved.
 								</p>
 							</td>
 						</tr>

@@ -25,9 +25,32 @@ const templates: TemplateData[] = [
 		key: 'request_send',
 		version: 1,
 		name: 'Loan Request Send',
-		description: 'Email sent to user when their loan request is received',
+		description:
+			'Email sent to user when their loan request is received (deprecated - use specific templates)',
 		subject: '{{borrowerName}} requested loan from you',
 		html: fs.readFileSync(path.join(__dirname, '../templates/requests-send.html'), 'utf-8'),
+	},
+	{
+		key: 'loan_request_from_borrower',
+		version: 1,
+		name: 'Loan Request from Borrower',
+		description: 'Email sent to lender when borrower requests to borrow money',
+		subject: '{{borrowerName}} wants to borrow money from you',
+		html: fs.readFileSync(
+			path.join(__dirname, '../templates/loan-request-from-borrower.html'),
+			'utf-8',
+		),
+	},
+	{
+		key: 'loan_offer_from_lender',
+		version: 1,
+		name: 'Loan Offer from Lender',
+		description: 'Email sent to borrower when lender offers to lend money',
+		subject: '{{lenderName}} is offering to lend you money',
+		html: fs.readFileSync(
+			path.join(__dirname, '../templates/loan-offer-from-lender.html'),
+			'utf-8',
+		),
 	},
 	{
 		key: 'request_approved',
@@ -93,7 +116,7 @@ const templates: TemplateData[] = [
 		version: 1,
 		name: 'Transaction Updated',
 		description: 'Email sent to lender when borrower updates transaction details',
-		subject: 'Transaction Updated by {{borrowerName}}',
+		subject: 'Transaction Updated by {{updatedByName}}',
 		html: fs.readFileSync(path.join(__dirname, '../templates/transaction-updated.html'), 'utf-8'),
 	},
 ];

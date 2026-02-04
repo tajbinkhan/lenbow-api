@@ -61,4 +61,5 @@ export type ValidateUpdateTransactionDtoWithCurrency = Omit<
 	'currency'
 > & {
 	currency: CurrencyData;
+	updatedBy?: number;
 };

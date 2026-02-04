@@ -82,6 +82,9 @@ export const transactions = pgTable(
 		createdBy: integer('created_by')
 			.notNull()
 			.references(() => users.id, { onDelete: 'cascade' }),
+
+		// Transaction last updated by
+		updatedBy: integer('updated_by').references(() => users.id, { onDelete: 'cascade' }),
 		...timestamps,
 	},
 	table => [
