@@ -1,5 +1,5 @@
+import type { ConfigService } from '@nestjs/config';
 import type { CookieOptions } from 'express';
-import { blackListDomains } from './constants';
 
 interface SameSiteCookieConfig {
 	sameSite: CookieOptions['sameSite'];
@@ -46,92 +46,24 @@ export default class AppHelpers {
 	}
 
 	/**
-	 * Determines the appropriate SameSite and secure settings for cookies based on the provided URLs.
+	 * Determines the appropriate SameSite and secure settings for cookies based on environment variables.
+	 * @param configService - NestJS ConfigService instance
 	 * @returns The SameSite and secure settings for cookies.
 	 */
-	static sameSiteCookieConfig(): SameSiteCookieConfig {
-		try {
-			// Helper function to check if hostname is an IP address
-			const isIpAddress = (hostname: string): boolean => {
-				return /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname);
-			};
+	static sameSiteCookieConfig(configService: ConfigService<any, boolean>): SameSiteCookieConfig {
+		const sameSite = configService.get<CookieOptions['sameSite']>('COOKIE_SAME_SITE', 'lax');
+		const secure = configService.get<string>('COOKIE_SECURE') === 'true';
+		const domain = configService.get<string>('COOKIE_DOMAIN');
 
-			// Helper function to check if domain is blacklisted
-			const isBlacklistedDomain = (domain: string): boolean => {
-				return blackListDomains.some(blacklistedDomain =>
-					domain.endsWith(blacklistedDomain.replace('.', '')),
-				);
-			};
+		const config: SameSiteCookieConfig = {
+			sameSite,
+			secure,
+		};
 
-			// Helper function to get domain from API_URL
-			const getDomainFromApiUrl = (): string => {
-				if (process.env.API_URL) {
-					try {
-						return new URL(process.env.API_URL).hostname;
-					} catch {
-						return process.env.API_URL;
-					}
-				}
-				return 'localhost';
-			};
-
-			// Check if COOKIE_DOMAIN exists and determine environment
-			const cookieDomain = process.env.COOKIE_DOMAIN;
-
-			if (!cookieDomain) {
-				// No COOKIE_DOMAIN set - assume local development
-				const fullDomain = getDomainFromApiUrl();
-
-				return {
-					sameSite: 'lax',
-					secure: false,
-					domain: fullDomain,
-				};
-			}
-
-			// Remove leading dot to check the actual domain
-			const domainToCheck = cookieDomain.startsWith('.') ? cookieDomain.substring(1) : cookieDomain;
-
-			// LOCAL DEVELOPMENT - detect by common local domains
-			if (
-				domainToCheck === 'localhost' ||
-				domainToCheck === '127.0.0.1' ||
-				isIpAddress(domainToCheck) ||
-				cookieDomain === 'localhost'
-			) {
-				const fullDomain = getDomainFromApiUrl();
-
-				return {
-					sameSite: 'lax',
-					secure: false,
-					domain: fullDomain,
-				};
-			}
-
-			// PRODUCTION ENVIRONMENT - any other domain
-			// Check if domain is blacklisted
-			if (isBlacklistedDomain(domainToCheck)) {
-				// For blacklisted domains, use strict with full domain name
-				const fullDomain = getDomainFromApiUrl();
-				return {
-					sameSite: 'none',
-					secure: true,
-					domain: fullDomain,
-				};
-			}
-
-			// For non-blacklisted domains, use lax with configured domain
-			return {
-				sameSite: 'lax',
-				secure: true,
-				domain: cookieDomain,
-			};
-		} catch {
-			// Error fallback - assume local development
-			return {
-				sameSite: 'lax',
-				secure: false,
-			};
+		if (domain) {
+			config.domain = domain;
 		}
+
+		return config;
 	}
 }

@@ -15,17 +15,19 @@ export class CsrfService {
 	constructor(private readonly configService: ConfigService<EnvType, true>) {
 		const secret = this.configService.get('CSRF_SECRET', { infer: true });
 
+		const cookieConfig = AppHelpers.sameSiteCookieConfig(this.configService);
+
 		const { generateCsrfToken, validateRequest, doubleCsrfProtection } = doubleCsrf({
 			getSecret: () => secret,
 			getSessionIdentifier: () => secret,
 			cookieName: 'csrf-token',
 			cookieOptions: {
 				maxAge: csrfTimeout,
-				sameSite: AppHelpers.sameSiteCookieConfig().sameSite,
-				secure: AppHelpers.sameSiteCookieConfig().secure,
+				sameSite: cookieConfig.sameSite,
+				secure: cookieConfig.secure,
 				httpOnly: true,
-				...(AppHelpers.sameSiteCookieConfig().domain && {
-					domain: AppHelpers.sameSiteCookieConfig().domain,
+				...(cookieConfig.domain && {
+					domain: cookieConfig.domain,
 				}),
 			},
 			size: 32,

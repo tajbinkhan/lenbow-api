@@ -83,11 +83,13 @@ export class AuthController {
 			deviceType: userDeviceInfo.deviceType,
 		});
 
+		const cookieConfig = AppHelpers.sameSiteCookieConfig(this.configService);
+
 		// Set cookie
 		request.res?.cookie('access-token', accessToken, {
 			httpOnly: true,
-			secure: AppHelpers.sameSiteCookieConfig().secure,
-			sameSite: AppHelpers.sameSiteCookieConfig().sameSite,
+			secure: cookieConfig.secure,
+			sameSite: cookieConfig.sameSite,
 			maxAge: sessionTimeout,
 		});
 
@@ -146,10 +148,12 @@ export class AuthController {
 
 		await this.authSession.revokeSession(userId, sessionToken);
 
+		const cookieConfig = AppHelpers.sameSiteCookieConfig(this.configService);
+
 		request.res?.clearCookie('access-token', {
 			httpOnly: true,
-			secure: AppHelpers.sameSiteCookieConfig().secure,
-			sameSite: AppHelpers.sameSiteCookieConfig().sameSite,
+			secure: cookieConfig.secure,
+			sameSite: cookieConfig.sameSite,
 		});
 		return createApiResponse(HttpStatus.OK, 'Logout successful', null);
 	}
@@ -283,10 +287,12 @@ export class AuthController {
 			deviceType: userDeviceInfo.deviceType,
 		});
 
+		const cookieConfig = AppHelpers.sameSiteCookieConfig(this.configService);
+
 		request.res?.cookie('access-token', accessToken, {
 			httpOnly: true,
-			secure: AppHelpers.sameSiteCookieConfig().secure,
-			sameSite: AppHelpers.sameSiteCookieConfig().sameSite,
+			secure: cookieConfig.secure,
+			sameSite: cookieConfig.sameSite,
 			maxAge: sessionTimeout,
 		});
 
