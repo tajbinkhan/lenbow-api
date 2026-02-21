@@ -90,6 +90,7 @@ export class AuthController {
 			httpOnly: true,
 			secure: cookieConfig.secure,
 			sameSite: cookieConfig.sameSite,
+			domain: cookieConfig.domain,
 			maxAge: sessionTimeout,
 		});
 
@@ -293,6 +294,7 @@ export class AuthController {
 			httpOnly: true,
 			secure: cookieConfig.secure,
 			sameSite: cookieConfig.sameSite,
+			domain: cookieConfig.domain,
 			maxAge: sessionTimeout,
 		});
 
