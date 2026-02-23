@@ -318,7 +318,7 @@ export const validateUUID = (name: string) => baseUUID(name);
 // 		.transform(value => value.trim());
 
 export const validatePhoneNumber = (name = 'Phone') =>
-	baseString(name, { min: 1 })
+	baseString(name)
 		.trim()
 		.superRefine((val, ctx) => {
 			// allow empty if you want optional phone; otherwise remove this
