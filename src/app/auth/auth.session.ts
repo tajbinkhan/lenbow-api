@@ -8,6 +8,7 @@ import { DATABASE_CONNECTION } from '../../database/connection';
 import schema from '../../database/schema';
 import DrizzleService from '../../database/service';
 import { SessionSchemaType } from '../../database/types';
+import { sessionRenewalThreshold, sessionTimeout } from '../../core/constants';
 import { SessionDataType } from './@types/auth.types';
 
 @Injectable()
@@ -77,6 +78,26 @@ export class AuthSession extends DrizzleService {
 		if (session.isRevoked) throw new UnauthorizedException('Session has been revoked');
 
 		if (session.expiresAt < new Date()) throw new UnauthorizedException('Session has expired');
+
+		return session;
+	}
+
+	shouldExtendSession(session: Pick<SessionSchemaType, 'expiresAt'>, now: Date = new Date()): boolean {
+		return session.expiresAt.getTime() - now.getTime() <= sessionRenewalThreshold;
+	}
+
+	async extendSession(
+		sessionId: number,
+		expiresAt: Date = new Date(Date.now() + sessionTimeout),
+	): Promise<SessionSchemaType> {
+		const session = await this.getDb()
+			.update(schema.sessions)
+			.set({ expiresAt })
+			.where(eq(schema.sessions.id, sessionId))
+			.returning()
+			.then(data => data[0]);
+
+		if (!session) throw new UnauthorizedException('Invalid session token');
 
 		return session;
 	}

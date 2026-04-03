@@ -1,5 +1,6 @@
 import type { ConfigService } from '@nestjs/config';
 import type { CookieOptions } from 'express';
+import { sessionTimeout } from './constants';
 
 interface SameSiteCookieConfig {
 	sameSite: CookieOptions['sameSite'];
@@ -65,5 +66,35 @@ export default class AppHelpers {
 		}
 
 		return config;
+	}
+
+	static accessTokenCookieConfig(
+		configService: ConfigService<any, boolean>,
+		maxAge: number = sessionTimeout,
+	): CookieOptions {
+		const cookieConfig = this.sameSiteCookieConfig(configService);
+
+		return {
+			httpOnly: true,
+			secure: cookieConfig.secure,
+			sameSite: cookieConfig.sameSite,
+			maxAge,
+			...(cookieConfig.domain && {
+				domain: cookieConfig.domain,
+			}),
+		};
+	}
+
+	static accessTokenClearCookieConfig(configService: ConfigService<any, boolean>): CookieOptions {
+		const cookieConfig = this.sameSiteCookieConfig(configService);
+
+		return {
+			httpOnly: true,
+			secure: cookieConfig.secure,
+			sameSite: cookieConfig.sameSite,
+			...(cookieConfig.domain && {
+				domain: cookieConfig.domain,
+			}),
+		};
 	}
 }

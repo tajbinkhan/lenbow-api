@@ -21,7 +21,6 @@ import { memoryStorage } from 'multer';
 import { type ApiResponse, createApiResponse } from '../../core/api-response.interceptor';
 import AppHelpers from '../../core/app.helper';
 import { CloudinaryImageService } from '../../core/cloudinary/upload';
-import { sessionTimeout } from '../../core/constants';
 import { EnvType } from '../../core/env';
 import { MediaDataType } from '../media/@types/media.types';
 import { FILE_SIZE_LIMIT, singleFileSchema, ZodFileValidationPipe } from '../media/media.pipe';
@@ -83,16 +82,11 @@ export class AuthController {
 			deviceType: userDeviceInfo.deviceType,
 		});
 
-		const cookieConfig = AppHelpers.sameSiteCookieConfig(this.configService);
-
-		// Set cookie
-		request.res?.cookie('access-token', accessToken, {
-			httpOnly: true,
-			secure: cookieConfig.secure,
-			sameSite: cookieConfig.sameSite,
-			domain: cookieConfig.domain,
-			maxAge: sessionTimeout,
-		});
+		request.res?.cookie(
+			'access-token',
+			accessToken,
+			AppHelpers.accessTokenCookieConfig(this.configService),
+		);
 
 		const responseUser: UserWithoutPasswordResponse = {
 			...user,
@@ -149,13 +143,10 @@ export class AuthController {
 
 		await this.authSession.revokeSession(userId, sessionToken);
 
-		const cookieConfig = AppHelpers.sameSiteCookieConfig(this.configService);
-
-		request.res?.clearCookie('access-token', {
-			httpOnly: true,
-			secure: cookieConfig.secure,
-			sameSite: cookieConfig.sameSite,
-		});
+		request.res?.clearCookie(
+			'access-token',
+			AppHelpers.accessTokenClearCookieConfig(this.configService),
+		);
 		return createApiResponse(HttpStatus.OK, 'Logout successful', null);
 	}
 
@@ -288,15 +279,11 @@ export class AuthController {
 			deviceType: userDeviceInfo.deviceType,
 		});
 
-		const cookieConfig = AppHelpers.sameSiteCookieConfig(this.configService);
-
-		request.res?.cookie('access-token', accessToken, {
-			httpOnly: true,
-			secure: cookieConfig.secure,
-			sameSite: cookieConfig.sameSite,
-			domain: cookieConfig.domain,
-			maxAge: sessionTimeout,
-		});
+		request.res?.cookie(
+			'access-token',
+			accessToken,
+			AppHelpers.accessTokenCookieConfig(this.configService),
+		);
 
 		const state = request.query.state as string | undefined;
 		let redirectUrl: string | null = null;

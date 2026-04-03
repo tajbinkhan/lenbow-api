@@ -4,6 +4,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import type { Request } from 'express';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
+import AppHelpers from '../../../core/app.helper';
 import { CryptoService } from '../../../core/crypto/crypto.service';
 import type { EnvType } from '../../../core/env';
 import { AuthService } from '../auth.service';
@@ -28,7 +29,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 					return request?.cookies?.['access-token'] as string | null;
 				},
 			]),
-			ignoreExpiration: false,
+			// Session validity is enforced from the database so active users can keep their session alive.
+			ignoreExpiration: true,
 			secretOrKey: configService.get('AUTH_SECRET', { infer: true }),
 			passReqToCallback: true,
 		});
@@ -58,6 +60,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 				message: 'Please complete 2FA verification to access this resource.',
 				code: 'TWO_FACTOR_REQUIRED',
 			});
+		}
+
+		if (this.authSession.shouldExtendSession(session)) {
+			await this.authSession.extendSession(session.id);
+			request.res?.cookie(
+				'access-token',
+				jwtToken,
+				AppHelpers.accessTokenCookieConfig(this.configService),
+			);
 		}
 
 		return user;
