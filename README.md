@@ -19,6 +19,8 @@ production-ready applications.
 - 🌐 **API Response Standardization** - Consistent response format across all endpoints
 - 📝 **Request Logging** - Comprehensive request/response logging
 - 🎯 **Device Tracking** - User agent and device information tracking
+- 💸 **Lender Direct Settlement** - Lenders can now settle loans directly with partial or full
+  amounts
 
 ## Tech Stack
 
@@ -169,6 +171,14 @@ src/
 ### CSRF
 
 - `GET /csrf` - Get CSRF token
+
+### Transactions (Repayment)
+
+- `PUT /transactions/:publicId/repayment/lender` - Lender settles repayment directly
+  - Partial amount updates status to `partially_paid`
+  - Full remaining amount updates status to `completed`
+- `PUT /transactions/:publicId/repayment/accept` - Lender accepts borrower requested repay
+- `PUT /transactions/:publicId/repayment/reject` - Lender rejects borrower requested repay
 
 ## Security Features
 

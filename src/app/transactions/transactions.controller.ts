@@ -34,6 +34,7 @@ import {
 	requestTransactionQuerySchema,
 	transactionQuerySchema,
 	validateIncomingTransactionSchema,
+	validateLenderRepaymentSchema,
 	validateTransactionSchema,
 	validateUpdateStatusTransactionSchema,
 	validateUpdateTransactionSchema,
@@ -41,6 +42,7 @@ import {
 	type TransactionQuerySchemaType,
 	type ValidateDeleteTransactionDto,
 	type ValidateIncomingTransactionDto,
+	type ValidateLenderRepaymentDto,
 	type ValidateTransactionDto,
 	type ValidateUpdateStatusTransactionDto,
 	type ValidateUpdateTransactionDto,
@@ -727,6 +729,159 @@ export class TransactionsController {
 		return createApiResponse(
 			HttpStatus.OK,
 			'Transaction status updated successfully',
+			responseTransaction,
+		);
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@Put(':publicId/repayment/lender')
+	async lenderRepayTransaction(
+		@Param('publicId', ParseUUIDPipe) publicId: string,
+		@Body() body: ValidateLenderRepaymentDto,
+		@Req() req: Request,
+	): Promise<ApiResponse<TransactionReturnType>> {
+		const user = req.user;
+
+		const validate = validateLenderRepaymentSchema.safeParse(body);
+		if (!validate.success) {
+			throw new BadRequestException(
+				`Validation failed: ${validate.error.issues.map(issue => issue.message).join(', ')}`,
+			);
+		}
+
+		const transaction = await this.transactionsService.getTransactionByPublicId(publicId);
+
+		if (transaction.lenderId !== user?.id)
+			throw new BadRequestException(`Only lender can settle repayment for the transaction.`);
+
+		if (transaction.status !== 'accepted' && transaction.status !== 'partially_paid') {
+			throw new BadRequestException(
+				`Only accepted or partially paid transactions can be settled by lender.`,
+			);
+		}
+
+		if (transaction.remainingAmount <= 0) {
+			throw new BadRequestException(`Transaction has no remaining amount to settle.`);
+		}
+
+		if (validate.data.amount > transaction.remainingAmount) {
+			throw new BadRequestException(
+				`Amount cannot be greater than remaining amount (${transaction.remainingAmount}).`,
+			);
+		}
+
+		const status =
+			validate.data.amount === transaction.remainingAmount ? 'completed' : 'partially_paid';
+
+		const updatedTransaction = await this.transactionsService.updateTransactionStatus(
+			transaction.id,
+			status,
+			{
+				amountPaid: this.transactionsService.calculateAmountPaid(
+					transaction.amountPaid,
+					validate.data.amount,
+					status,
+				),
+				remainingAmount: this.transactionsService.calculateRemainingAmount(
+					transaction.remainingAmount,
+					validate.data.amount,
+					status,
+				),
+				reviewAmount: 0,
+			},
+		);
+
+		const responseTransaction: TransactionReturnType = {
+			...updatedTransaction,
+			id: updatedTransaction.publicId,
+		};
+
+		const historyAction: TransactionHistoryActionEnum =
+			status === 'completed' ? 'complete_repay' : 'partial_repay';
+
+		await this.historyService.createTransactionHistoryRecord({
+			transactionId: transaction.id,
+			action: historyAction,
+			details: responseTransaction,
+			occurredAt: new Date(),
+		});
+
+		const borrowerDetails = await this.authService.findUserById(transaction.borrowerId);
+		const lenderDetails = await this.authService.findUserById(transaction.lenderId);
+
+		if (status === 'completed') {
+			const completedParams = {
+				amount: updatedTransaction.amount,
+				currencySymbol: updatedTransaction.currency.symbol,
+				completedAt: new Date(updatedTransaction.completedAt || new Date()).toLocaleDateString(
+					'en-US',
+					{
+						year: 'numeric',
+						month: 'long',
+						day: 'numeric',
+					},
+				),
+				reviewAmount: validate.data.amount,
+				requestDate: new Date(updatedTransaction.requestDate).toLocaleDateString('en-US', {
+					year: 'numeric',
+					month: 'long',
+					day: 'numeric',
+				}),
+				transactionId: updatedTransaction.publicId,
+				actionUrl: `${this.configService.get('APP_URL')}/history?search=${updatedTransaction.publicId}`,
+				supportEmail: this.configService.get('BREVO_SENDER_EMAIL'),
+				year: new Date().getFullYear(),
+			};
+
+			if (borrowerDetails && borrowerDetails.receiveTransactionEmails) {
+				await this.brevoService.sendFromTemplate({
+					templateKey: 'repayment_completed',
+					to: [{ email: borrowerDetails.email, name: borrowerDetails.name || 'User' }],
+					params: {
+						...completedParams,
+						borrowerName: borrowerDetails.name || 'User',
+						lenderName: lenderDetails?.name || 'Lender',
+						unsubscribeUrl: this.generateUnsubscribeUrl(borrowerDetails.email),
+					},
+				});
+			}
+
+			if (lenderDetails && lenderDetails.receiveTransactionEmails) {
+				await this.brevoService.sendFromTemplate({
+					templateKey: 'repayment_completed_lender',
+					to: [{ email: lenderDetails.email, name: lenderDetails.name || 'User' }],
+					params: {
+						...completedParams,
+						borrowerName: borrowerDetails?.name || 'Borrower',
+						lenderName: lenderDetails.name || 'User',
+						unsubscribeUrl: this.generateUnsubscribeUrl(lenderDetails.email),
+					},
+				});
+			}
+		} else if (borrowerDetails && borrowerDetails.receiveTransactionEmails) {
+			await this.brevoService.sendFromTemplate({
+				templateKey: 'repayment_accepted',
+				to: [{ email: borrowerDetails.email, name: borrowerDetails.name || 'User' }],
+				params: {
+					borrowerName: borrowerDetails.name || 'User',
+					lenderName: lenderDetails?.name || 'Lender',
+					amount: updatedTransaction.amount,
+					reviewAmount: validate.data.amount,
+					amountPaid: updatedTransaction.amountPaid,
+					remainingAmount: updatedTransaction.remainingAmount,
+					currencySymbol: updatedTransaction.currency.symbol,
+					transactionId: updatedTransaction.publicId,
+					actionUrl: `${this.configService.get('APP_URL')}/borrow?search=${updatedTransaction.publicId}`,
+					supportEmail: this.configService.get('BREVO_SENDER_EMAIL'),
+					unsubscribeUrl: this.generateUnsubscribeUrl(borrowerDetails.email),
+					year: new Date().getFullYear(),
+				},
+			});
+		}
+
+		return createApiResponse(
+			HttpStatus.OK,
+			'Lender repayment settled successfully',
 			responseTransaction,
 		);
 	}

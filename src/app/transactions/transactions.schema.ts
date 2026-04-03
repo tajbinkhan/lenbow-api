@@ -95,6 +95,10 @@ const updateRequestedRepayTransactionSchema = z.object({
 	reviewAmount: validatePositiveNumber('Review Amount'),
 });
 
+export const validateLenderRepaymentSchema = z.object({
+	amount: validatePositiveNumber('Amount'),
+});
+
 export const validateUpdateStatusTransactionSchema = z.discriminatedUnion('status', [
 	updateRejectedTransactionSchema.extend({
 		status: z.literal('rejected'),
@@ -129,5 +133,6 @@ export type ValidateTransactionDto = z.infer<typeof validateTransactionSchema>;
 export type ValidateUpdateStatusTransactionDto = z.infer<
 	typeof validateUpdateStatusTransactionSchema
 >;
+export type ValidateLenderRepaymentDto = z.infer<typeof validateLenderRepaymentSchema>;
 export type ValidateUpdateTransactionDto = z.infer<typeof validateUpdateTransactionSchema>;
 export type ValidateDeleteTransactionDto = z.infer<typeof validateDeleteTransactionSchema>;
