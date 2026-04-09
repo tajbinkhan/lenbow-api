@@ -151,11 +151,10 @@ export class TransactionsService extends DrizzleService {
 		// Determine pagination parameters
 		let pagination;
 		let offset = 0;
-		let totalItems = 0;
 
 		if (filter.page && filter.limit) {
 			// Get total count for pagination
-			totalItems = await this.getDb()
+			const totalItems = await this.getDb()
 				.select({
 					count: count(),
 				})
@@ -377,11 +376,10 @@ export class TransactionsService extends DrizzleService {
 		// Determine pagination parameters
 		let pagination;
 		let offset = 0;
-		let totalItems = 0;
 
 		if (filter.page && filter.limit) {
 			// Get total count for pagination
-			totalItems = await this.getDb()
+			const totalItems = await this.getDb()
 				.select({
 					count: count(),
 				})
@@ -532,7 +530,10 @@ export class TransactionsService extends DrizzleService {
 	): Promise<TransactionSchemaType> {
 		const updatedTransaction = await this.getDb()
 			.update(schema.transactions)
-			.set(data)
+			.set({
+				...data,
+				remainingAmount: data.amount,
+			})
 			.where(eq(schema.transactions.id, id))
 			.returning()
 			.then(res => res[0]);
